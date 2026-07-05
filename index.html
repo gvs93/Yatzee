@@ -529,7 +529,7 @@ function refreshStart(){
 /* ============================================================
    Version, toast, identité appareil & tour de jeu (en ligne)
    ============================================================ */
-const APP_VERSION="1.2.0";
+const APP_VERSION="1.2.1";
 let toastT=null;
 function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
 
@@ -977,16 +977,24 @@ function confirmReset(){
 function showShare(){
   const warn=SYNC_ENABLED?"":`<div class="warn">La synchro live n'est pas configurée. Renseigne <b>FIREBASE_CONFIG</b> dans le fichier pour l'activer. En attendant, l'appli reste 100% fonctionnelle hors-ligne sur cet appareil.</div>`;
   const codeArea=state.room
-    ?`<p>Code de cette partie&nbsp;: <b style="font-size:22px;letter-spacing:.2em">${state.room}</b><br>Saisis ce code sur un autre appareil pour suivre les scores en direct.</p>`
-    :`<p>Crée un code pour partager cette partie en direct avec d'autres appareils.</p>`;
-  openModal(`<h3>Partie en ligne</h3>${codeArea}
-    <div class="modal-row">
+    ?`<p>Code de cette partie&nbsp;: <b style="font-size:22px;letter-spacing:.2em">${state.room}</b><br>Les autres ouvrent l'appli, font <b>Rejoindre</b> et tapent ce code.</p>`
+    :`<p>Crée un code, partage-le, et chacun le saisit sur son téléphone pour jouer en direct.</p>`;
+  const meRow=state.room
+    ?`<div class="modal-row" style="margin-top:8px;align-items:center">
+        <span style="font-size:13px;color:#4a453a">Ce téléphone joue&nbsp;: <b>${myId()?escapeHtml(meName()):"— à définir"}</b></span>
+        <button class="ok" id="pickMe">${myId()?"Changer":"👤 Je suis…"}</button>
+      </div>`
+    :"";
+  openModal(`<h3>Partie en ligne</h3>${codeArea}${meRow}
+    <div class="modal-row" style="margin-top:8px">
       <button class="cancel" onclick="closeModal()">Fermer</button>
       <button class="ok" id="mkRoom">${state.room?"Nouveau code":"Créer un code"}</button>
     </div>${warn}`);
   $("#mkRoom").addEventListener("click",()=>{
     state.room=randCode();save();connectRoom();closeModal();showShare();
   });
+  const pm=$("#pickMe");
+  if(pm)pm.addEventListener("click",chooseIdentity);
 }
 function showJoin(){
   openModal(`<h3>Rejoindre une partie</h3>
