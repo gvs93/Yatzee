@@ -1004,8 +1004,12 @@ function showShare(){
       <button class="cancel" onclick="closeModal()">Fermer</button>
       <button class="ok" id="mkRoom">${state.room?"Nouveau code":"Créer un code"}</button>
     </div>${warn}`);
-  $("#mkRoom").addEventListener("click",()=>{
-    state.room=randCode();save();connectRoom();closeModal();showShare();
+  $("#mkRoom").addEventListener("click",async ()=>{
+    state.room=randCode();save();
+    await connectRoom();
+    pushRemote(); // amorce la partie côté serveur tout de suite, sinon un joueur qui arrive avant
+                  // la prochaine modification de l'hôte tomberait sur "code introuvable"
+    closeModal();showShare();
   });
   const pm=$("#pickMe");
   if(pm)pm.addEventListener("click",chooseIdentity);
@@ -1018,12 +1022,38 @@ function showJoin(){
       <button class="cancel" onclick="closeModal()">Annuler</button>
       <button class="ok" id="doJoin">Rejoindre</button>
     </div>
+    <p id="joinErr" class="warn" style="display:none"></p>
     ${SYNC_ENABLED?"":`<div class="warn">Synchro non configurée : renseigne FIREBASE_CONFIG dans le fichier.</div>`}`);
-  $("#doJoin").addEventListener("click",()=>{
-    const c=$("#joinCode").value.trim().toUpperCase();
-    if(c.length<3)return;
-    state.room=c;save();connectRoom();closeModal();goGame();
-  });
+  $("#doJoin").addEventListener("click",()=>doJoinRoom($("#joinCode").value.trim().toUpperCase()));
+  const inp=$("#joinCode");
+  if(inp)inp.addEventListener("keydown",e=>{if(e.key==="Enter")doJoinRoom(inp.value.trim().toUpperCase());});
+}
+async function doJoinRoom(code){
+  if(code.length<3)return;
+  if(!SYNC_ENABLED){toast("Synchro non configurée");return;}
+  const btn=$("#doJoin"),err=$("#joinErr");
+  if(err)err.style.display="none";
+  if(btn){btn.disabled=true;btn.textContent="Connexion…";}
+
+  // On mémorise l'état local au cas où le code est invalide et qu'il faut revenir en arrière.
+  const prevState=state;
+  state={...newState(),room:code,updated:0}; // updated:0 -> on accepte forcément l'état de l'hôte, quel qu'il soit
+  store.set("yams_state",JSON.stringify(state));
+
+  const remote=await connectRoom({waitForFirst:true,timeoutMs:7000});
+
+  if(!remote){
+    // Aucune partie trouvée à ce code (ou pas de réseau) : on revient à l'état d'avant.
+    leaveRoom();
+    state=prevState;
+    store.set("yams_state",JSON.stringify(state));
+    if(err){err.textContent="Aucune partie trouvée avec ce code. Vérifie qu'il est correct et que l'hôte est bien en ligne.";err.style.display="block";}
+    if(btn){btn.disabled=false;btn.textContent="Rejoindre";}
+    return;
+  }
+
+  closeModal();
+  goGame();
 }
 function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
 
@@ -1067,9 +1097,42 @@ function confirmLeave(){
    Firebase (chargé à la demande, seulement en ligne)
    ============================================================ */
 let db=null, roomRef=null, roomUnsub=null;
-async function connectRoom(){
+
+// Applique un état reçu du serveur. Retourne true si une partie existe
+// bien à ce code (même si elle n'apporte rien de plus récent), false si
+// le snapshot est vide (aucune partie à ce code).
+function applyRemoteSnapshot(v){
+  if(!v)return false;
+  if(v.updated<=state.updated)return true; // partie trouvée, mais rien de plus récent à prendre
+  const prevSpin=(state.spin||[]).slice();
+  remoteApplying=true;
+  state=v;
+  remoteApplying=false;
+  store.set("yams_state",JSON.stringify(state));
+  if($("#gameScreen").classList.contains("active")){
+    let rolled=false;
+    renderSheet();
+    if(state.physical===false){
+      renderActivePick();
+      rolled=(state.spin||[]).some((s,i)=>s!==(prevSpin[i]||0));
+      renderDice(rolled);
+      renderSuggest();
+    }
+    updateTurnUI();
+    updateSpectator(rolled);
+  }
   updateStatus();
-  if(!SYNC_ENABLED||!state.room||!navigator.onLine)return;
+  return true;
+}
+
+// connectRoom({waitForFirst:true}) retourne une Promise résolue avec l'état
+// distant dès qu'il arrive (utilisé par "Rejoindre" pour ne pas afficher
+// l'écran de jeu avant d'avoir les vraies données de l'hôte), ou avec null
+// si la partie n'existe pas à ce code / ne répond pas dans le délai.
+async function connectRoom(opts){
+  opts=opts||{};
+  updateStatus();
+  if(!SYNC_ENABLED||!state.room||!navigator.onLine)return opts.waitForFirst?null:undefined;
   try{
     if(!db){
       const app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
@@ -1079,31 +1142,35 @@ async function connectRoom(){
     }
     if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}
     roomRef=db.ref(db.inst,"yams/"+state.room);
-    roomUnsub=db.onValue(roomRef,snap=>{
-      const v=snap.val();
-      if(!v||v.updated<=state.updated)return;
-      const prevSpin=(state.spin||[]).slice();
-      remoteApplying=true;
-      state=v;
-      remoteApplying=false;
-      store.set("yams_state",JSON.stringify(state));
-      if($("#gameScreen").classList.contains("active")){
-        let rolled=false;
-        renderSheet();
-        if(state.physical===false){
-          renderActivePick();
-          rolled=(state.spin||[]).some((s,i)=>s!==(prevSpin[i]||0));
-          renderDice(rolled);
-          renderSuggest();
-        }
-        updateTurnUI();
-        updateSpectator(rolled);
-      }
-      updateStatus();
-    });
+
+    let firstSnapshot=null;
+    if(opts.waitForFirst){
+      firstSnapshot=new Promise(resolve=>{
+        let done=false;
+        const timer=setTimeout(()=>{
+          if(done)return;done=true;resolve(null);
+        },opts.timeoutMs||7000);
+        roomUnsub=db.onValue(roomRef,snap=>{
+          const v=snap.val();
+          const found=applyRemoteSnapshot(v);
+          if(!done){
+            done=true;clearTimeout(timer);
+            resolve(found?(v||state):null);
+          }
+        },()=>{ // erreur de lecture (droits, réseau...)
+          if(!done){done=true;clearTimeout(timer);resolve(null);}
+        });
+      });
+    }else{
+      roomUnsub=db.onValue(roomRef,snap=>applyRemoteSnapshot(snap.val()));
+    }
     updateStatus("sync");
     setTimeout(updateStatus,800);
-  }catch(e){console.warn("Sync indisponible",e);}
+    if(firstSnapshot)return await firstSnapshot;
+  }catch(e){
+    console.warn("Sync indisponible",e);
+    if(opts.waitForFirst)return null;
+  }
 }
 function pushRemote(){
   if(roomRef&&db&&navigator.onLine){
