@@ -437,7 +437,7 @@ const CATS=[
   {k:"quatre",l:"Quatre",sec:"up", face:4},
   {k:"cinq", l:"Cinq",   sec:"up", face:5},
   {k:"six",  l:"Six",    sec:"up", face:6},
-  {k:"brelan",l:"Brelan",      sec:"low"},
+  {k:"brelan",l:"Brelan",      sec:"low", fixed:25},
   {k:"carre", l:"Carré",       sec:"low"},
   {k:"full",  l:"Full",        sec:"low", fixed:25},
   {k:"petiteSuite",l:"Petite suite",sec:"low", fixed:30},
@@ -513,7 +513,7 @@ function computeCategory(k,dice){
   switch(k){
     case"un":return c[1]*1; case"deux":return c[2]*2; case"trois":return c[3]*3;
     case"quatre":return c[4]*4; case"cinq":return c[5]*5; case"six":return c[6]*6;
-    case"brelan":return c.some(n=>n>=3)?s:0;
+    case"brelan":return c.some(n=>n>=3)?25:0;
     case"carre":return c.some(n=>n>=4)?s:0;
     case"full":return (c.some(n=>n===3)&&c.some(n=>n===2))||c.some(n=>n===5)?25:0;
     case"petiteSuite":{const u=[...new Set(dice.map(d=>d.v))].sort();
@@ -564,7 +564,7 @@ function refreshStart(){
 /* ============================================================
    Version, toast, identité appareil & tour de jeu (en ligne)
    ============================================================ */
-const APP_VERSION="1.4.0";
+const APP_VERSION="1.4.3";
 let toastT=null;
 function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
 
@@ -810,14 +810,19 @@ function renderSuggest(){
   const mine=isMyTurn();
 
   // On ne recommande que parmi les catégories réellement jouables maintenant :
-  // pas déjà remplies, et (en multijoueur) pas verrouillées par un tour déjà entamé
-  // sur une autre catégorie.
+  // pas déjà remplies, et (en multijoueur) pas verrouillées par un tour déjà entamé.
+  // À points ÉGAUX, on départage par "rareté" (PRIO) : un carré de 1 doit aller
+  // sur Carré, pas sur Brelan (les deux valent 9). Chance en dernier recours.
+  const PRIO={yams:100,grandeSuite:95,petiteSuite:90,carre:70,full:60,brelan:40,
+    six:36,cinq:35,quatre:34,trois:33,deux:32,un:31,chance:5};
   let best=null;
   CATS.forEach(c=>{
     const val=computeCategory(c.k,state.dice);
     const taken=typeof sc[c.k]==="number";
     const locked=isMultiplayer() && state.turnPlaced!=null && state.turnPlaced!==c.k;
-    if(!taken && !locked && (!best || val>best.val)) best={k:c.k,val,l:c.l};
+    if(taken||locked)return;
+    const prio=PRIO[c.k]||0;
+    if(!best || val>best.val || (val===best.val && prio>best.prio)) best={k:c.k,val,l:c.l,prio};
   });
 
   if(tip){
@@ -1301,33 +1306,12 @@ $("#specMinBtn").addEventListener("click",()=>{
 });
 
 /* ============================================================
-   Mise à jour de l'appli (service worker)
+   (Pas de service worker : l'appli est servie via Google Apps
+   Script, où un SW ne peut pas tourner. L'appli reste 100%
+   fonctionnelle — persistance locale + synchro Firebase.
+   Pour un vrai mode hors-ligne, il faudrait un hébergement
+   statique type GitHub Pages + un sw.js.)
    ============================================================ */
-let swReg=null;
-if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("sw.js").then(reg=>{
-      swReg=reg;
-      if(reg.waiting && navigator.serviceWorker.controller) showUpdate();
-      reg.addEventListener("updatefound",()=>{
-        const nw=reg.installing;if(!nw)return;
-        nw.addEventListener("statechange",()=>{
-          if(nw.state==="installed" && navigator.serviceWorker.controller) showUpdate();
-        });
-      });
-    }).catch(()=>{});
-    let refreshing=false;
-    navigator.serviceWorker.addEventListener("controllerchange",()=>{
-      if(refreshing)return;refreshing=true;location.reload();
-    });
-  });
-}
-function showUpdate(){const b=$("#updateBar");if(b)b.style.display="flex";}
-const _ub=$("#updateBtn");
-if(_ub)_ub.addEventListener("click",()=>{
-  if(swReg&&swReg.waiting)swReg.waiting.postMessage({type:"SKIP_WAITING"});
-  else location.reload();
-});
 
 /* ============================================================
    Init
