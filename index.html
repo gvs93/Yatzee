@@ -284,6 +284,15 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
 .spec-dice .die{transform:scale(.82);transform-origin:center}
 .spec-status{text-align:center;font-size:14px;font-weight:700;color:#cfe8d9;min-height:19px}
 .spec-foot{text-align:center;font-size:11px;line-height:1.4;color:#8fae9e;margin-top:9px}
+.menu-btn{display:none;flex:0 0 auto;width:42px;height:42px;border-radius:12px;
+  background:rgba(255,255,255,.08);border:1px solid var(--felt-line);color:var(--ivory);
+  font-size:20px;line-height:1;align-items:center;justify-content:center}
+header.in-game .menu-btn{display:flex}
+.spec-card.min .spec-dice,.spec-card.min .spec-status,.spec-card.min .spec-foot{display:none}
+.spec-min-btn{position:absolute;top:8px;right:10px;width:30px;height:30px;border-radius:9px;
+  background:rgba(255,255,255,.1);border:1px solid var(--felt-line);color:var(--ivory);font-size:15px;
+  display:flex;align-items:center;justify-content:center}
+.spec-card{position:relative}
 </style>
 </head>
 <body>
@@ -299,6 +308,7 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
     <span class="dot" id="statusDot"></span>
     <span id="statusText">Local</span>
   </div>
+  <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
 </header>
 
 <main>
@@ -355,6 +365,7 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
     <!-- Spectateur : ce que voient les autres pendant qu'un joueur joue -->
     <div class="spec-overlay" id="specOverlay">
       <div class="spec-card">
+        <button class="spec-min-btn" id="specMinBtn" aria-label="Réduire">▾</button>
         <div class="spec-title" id="specTitle"></div>
         <div class="spec-dice" id="specDice"></div>
         <div class="spec-status" id="specStatus"></div>
@@ -529,7 +540,7 @@ function refreshStart(){
 /* ============================================================
    Version, toast, identité appareil & tour de jeu (en ligne)
    ============================================================ */
-const APP_VERSION="1.2.1";
+const APP_VERSION="1.3.0";
 let toastT=null;
 function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
 
@@ -841,6 +852,7 @@ function updateSpectator(animate){
   // mode spectateur : on masque le plateau interactif, on montre la popup
   $("#tray").style.display="none";
   ov.style.display="flex";
+  if(animate){const c=ov.querySelector(".spec-card");c.classList.remove("min");$("#specMinBtn").textContent="▾";}
   $("#specTitle").innerHTML=`🎲 <b>${escapeHtml(activeName())}</b> est en train de jouer`;
   renderSpecDice(animate);
 
@@ -868,6 +880,7 @@ function updateSpectator(animate){
 function goGame(){
   $("#setupScreen").classList.remove("active");
   $("#gameScreen").classList.add("active");
+  $("header").classList.add("in-game");
   renderSheet();
   if(state.physical===false){
     $("#tray").style.display="block";
@@ -882,6 +895,7 @@ function goGame(){
 }
 function goSetup(){
   $("#specOverlay").style.display="none";
+  $("header").classList.remove("in-game");
   $("#gameScreen").classList.remove("active");
   $("#setupScreen").classList.add("active");
   renderSetup();
@@ -1013,10 +1027,46 @@ function showJoin(){
 }
 function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
 
+/* ---- Menu (toujours accessible via le bouton ☰ en haut) ---- */
+function showMenu(){
+  openModal(`<h3>Menu</h3>
+    <div class="modal-row" style="flex-direction:column;gap:8px;align-items:stretch">
+      <button class="ok" id="mShare">🔗 Partie en ligne / Qui suis-je</button>
+      <button class="ok" id="mRank">🏆 Classement</button>
+      <button class="ok" id="mHist">📜 Historique</button>
+      <button class="ok" id="mReset">↺ Nouvelle partie</button>
+      <button class="cancel" id="mLeave" style="border:1px solid #e6c4bf;color:var(--red)">🚪 Quitter la partie</button>
+      <button class="cancel" onclick="closeModal()">Fermer</button>
+    </div>`);
+  $("#mShare").addEventListener("click",()=>{closeModal();showShare();});
+  $("#mRank").addEventListener("click",()=>{closeModal();showRanking();});
+  $("#mHist").addEventListener("click",()=>{closeModal();showHistory();});
+  $("#mReset").addEventListener("click",()=>{closeModal();confirmReset();});
+  $("#mLeave").addEventListener("click",()=>{closeModal();confirmLeave();});
+}
+function confirmLeave(){
+  const online=isMultiplayer();
+  openModal(`<h3>Quitter la partie&nbsp;?</h3>
+    <p>${online
+      ? "Tu sors de cette partie sur <b>ce téléphone</b>. Les autres continuent normalement, et tu pourras la rejoindre avec le code."
+      : "Tu retournes à l'écran d'accueil. La partie reste enregistrée sur ce téléphone."}</p>
+    <div class="modal-row">
+      <button class="cancel" onclick="closeModal()">Annuler</button>
+      <button class="ok" id="doLeave" style="background:var(--red)">Quitter</button>
+    </div>`);
+  $("#doLeave").addEventListener("click",()=>{
+    leaveRoom();
+    state=newState();                         // repart sur un état local vierge
+    store.set("yams_state",JSON.stringify(state));
+    $(".spec-card")&&$(".spec-card").classList.remove("min");
+    closeModal();updateStatus();goSetup();
+  });
+}
+
 /* ============================================================
    Firebase (chargé à la demande, seulement en ligne)
    ============================================================ */
-let db=null, roomRef=null;
+let db=null, roomRef=null, roomUnsub=null;
 async function connectRoom(){
   updateStatus();
   if(!SYNC_ENABLED||!state.room||!navigator.onLine)return;
@@ -1027,8 +1077,9 @@ async function connectRoom(){
       const a=app.initializeApp(FIREBASE_CONFIG);
       db={rt,ref:rt.ref,onValue:rt.onValue,set:rt.set,inst:rt.getDatabase(a)};
     }
+    if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}
     roomRef=db.ref(db.inst,"yams/"+state.room);
-    db.onValue(roomRef,snap=>{
+    roomUnsub=db.onValue(roomRef,snap=>{
       const v=snap.val();
       if(!v||v.updated<=state.updated)return;
       const prevSpin=(state.spin||[]).slice();
@@ -1037,10 +1088,11 @@ async function connectRoom(){
       remoteApplying=false;
       store.set("yams_state",JSON.stringify(state));
       if($("#gameScreen").classList.contains("active")){
+        let rolled=false;
         renderSheet();
         if(state.physical===false){
           renderActivePick();
-          const rolled=(state.spin||[]).some((s,i)=>s!==(prevSpin[i]||0));
+          rolled=(state.spin||[]).some((s,i)=>s!==(prevSpin[i]||0));
           renderDice(rolled);
           renderSuggest();
         }
@@ -1058,6 +1110,10 @@ function pushRemote(){
     updateStatus("sync");
     db.set(roomRef,state).then(()=>updateStatus()).catch(()=>updateStatus());
   }
+}
+function leaveRoom(){
+  if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}
+  roomRef=null;
 }
 
 /* ============================================================
@@ -1108,6 +1164,11 @@ $("#endTurnBtn").addEventListener("click",()=>{
   autoNextPlayer();   // passe au joueur suivant
   resetTurn();        // dés remis à zéro (save + push)
   renderSheet();updateTurnUI();updateSpectator(false);
+});
+$("#menuBtn").addEventListener("click",showMenu);
+$("#specMinBtn").addEventListener("click",()=>{
+  const c=$(".spec-card");c.classList.toggle("min");
+  $("#specMinBtn").textContent=c.classList.contains("min")?"▴":"▾";
 });
 
 /* ============================================================
