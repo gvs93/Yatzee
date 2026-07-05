@@ -540,7 +540,7 @@ function refreshStart(){
 /* ============================================================
    Version, toast, identité appareil & tour de jeu (en ligne)
    ============================================================ */
-const APP_VERSION="1.3.0";
+const APP_VERSION="1.3.1";
 let toastT=null;
 function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
 
