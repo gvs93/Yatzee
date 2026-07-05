@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#123c2a">
-<title>Yam's — Feuille de scores</title>
+<title>Ameya Games — Yam's</title>
+<meta name="apple-mobile-web-app-title" content="Ameya Games">
 <style>
 :root{
   --felt:#1b5137;
@@ -255,8 +256,8 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
 
 <header>
   <div class="brand">
-    <h1>Yam<span class="apos">'</span>s</h1>
-    <small id="subtitle">Feuille de scores</small>
+    <h1>Ameya <span class="apos">Games</span></h1>
+    <small id="subtitle">Yam's</small>
   </div>
   <div class="status" id="status">
     <span class="dot" id="statusDot"></span>
@@ -316,6 +317,7 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
     <div class="toolbar">
       <button class="tool" id="shareBtn">🔗 Partager / Sync</button>
       <button class="tool win" id="winBtn">🏆 Classement</button>
+      <button class="tool" id="historyBtn">📜 Historique</button>
       <button class="tool" id="resetBtn">↺ Nouvelle partie</button>
     </div>
   </section>
@@ -350,11 +352,13 @@ const store = (()=>{
    Doc: console.firebase.google.com -> Realtime Database.
    ============================================================ */
 const FIREBASE_CONFIG = {
-  // apiKey: "…",
-  // authDomain: "…",
-  // databaseURL: "https://TON-PROJET-default-rtdb.europe-west1.firebasedatabase.app",
-  // projectId: "…",
-  // appId: "…"
+  apiKey: "AIzaSyAnt2oiCjl8JLzUvBswUDHaBZ3GM53y9Ck",
+  authDomain: "ameyatzee.firebaseapp.com",
+  databaseURL: "https://ameyatzee-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "ameyatzee",
+  storageBucket: "ameyatzee.firebasestorage.app",
+  messagingSenderId: "690846387677",
+  appId: "1:690846387677:web:0200403f1af5b707ffba34"
 };
 const SYNC_ENABLED = !!FIREBASE_CONFIG.databaseURL;
 
@@ -699,19 +703,76 @@ function showRanking(){
   openModal(`<h3>Classement</h3>${lines}
     <div class="modal-row"><button class="ok" onclick="closeModal()">Fermer</button></div>`);
 }
+/* ============================================================
+   Historique des parties (stocké en local, survit au refresh)
+   ============================================================ */
+function loadHistory(){try{return JSON.parse(store.get("yams_history"))||[];}catch(e){return[];}}
+function saveHistory(h){store.set("yams_history",JSON.stringify(h));}
+function currentHasScores(){
+  return state.players.some(p=>Object.keys(state.scores[p.id]||{}).length>0);
+}
+function archiveCurrent(){
+  if(!currentHasScores())return;
+  const ranked=[...state.players]
+    .map(p=>({name:p.name||"—",total:grandTotal(p.id)}))
+    .sort((a,b)=>b.total-a.total);
+  const hist=loadHistory();
+  hist.unshift({date:Date.now(),room:state.room||null,players:ranked});
+  if(hist.length>60)hist.length=60;
+  saveHistory(hist);
+}
+function showHistory(){
+  const hist=loadHistory();
+  let body;
+  if(!hist.length){
+    body=`<p class="hint" style="margin:8px 0 0">Aucune partie enregistrée pour l'instant. Chaque partie est archivée ici quand tu en démarres une nouvelle.</p>`;
+  }else{
+    body=hist.map(h=>{
+      const d=new Date(h.date);
+      const ds=d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})+" · "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+      const lines=h.players.map((p,i)=>`<div class="winner-line${i===0?" first":""}">
+        <span>${i===0?"🏆 ":`${i+1}. `}${escapeHtml(p.name)}</span><span>${p.total}</span></div>`).join("");
+      return `<div style="padding:12px 0;border-top:1px solid rgba(22,36,29,.1)">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6f7d74;margin-bottom:6px">${ds}${h.room?` · code ${h.room}`:""}</div>
+        ${lines}</div>`;
+    }).join("");
+  }
+  openModal(`<h3>Historique des parties</h3>
+    <div style="max-height:52vh;overflow:auto">${body}</div>
+    <div class="modal-row">
+      <button class="cancel" onclick="closeModal()">Fermer</button>
+      ${hist.length?`<button class="ok" id="clearHist">Vider</button>`:""}
+    </div>`);
+  const ch=$("#clearHist");
+  if(ch)ch.addEventListener("click",()=>{
+    saveHistory([]);closeModal();showHistory();
+  });
+}
+
 function confirmReset(){
   openModal(`<h3>Nouvelle partie&nbsp;?</h3>
-    <p>Les scores actuels seront effacés. Les noms des joueurs peuvent être réutilisés.</p>
-    <div class="modal-row">
+    <p>La partie en cours sera enregistrée dans l'historique, puis les scores seront remis à zéro.</p>
+    <div class="modal-row" style="flex-direction:column;gap:8px;align-items:stretch">
+      <button class="ok" id="resetSame">Rejouer avec les mêmes joueurs</button>
+      <button class="ok" id="resetNew">Changer les joueurs</button>
       <button class="cancel" onclick="closeModal()">Annuler</button>
-      <button class="ok" id="doReset">Tout effacer</button>
     </div>`);
-  $("#doReset").addEventListener("click",()=>{
-    const names=state.players.map(p=>({id:p.id,name:p.name}));
-    const phys=state.physical, room=state.room;
+  const names=state.players.map(p=>({id:p.id,name:p.name}));
+  const phys=state.physical, room=state.room;
+  $("#resetSame").addEventListener("click",()=>{
+    archiveCurrent();
     state=newState();state.players=names.length?names:state.players;
     state.physical=phys;state.room=room;
     save();closeModal();goGame();
+  });
+  $("#resetNew").addEventListener("click",()=>{
+    archiveCurrent();
+    state=newState();
+    // on repart de l'écran de saisie : les noms sont pré-remplis mais tu peux
+    // les renommer, en retirer (×) ou en ajouter, et rechoisir les dés.
+    state.players=names.length?names:state.players;
+    state.physical=phys;state.room=room;
+    save();closeModal();goSetup();
   });
 }
 function showShare(){
@@ -825,6 +886,7 @@ $("#joinBtn").addEventListener("click",showJoin);
 $("#rollBtn").addEventListener("click",rollDice);
 $("#shareBtn").addEventListener("click",showShare);
 $("#winBtn").addEventListener("click",showRanking);
+$("#historyBtn").addEventListener("click",showHistory);
 $("#resetBtn").addEventListener("click",confirmReset);
 
 /* ============================================================
