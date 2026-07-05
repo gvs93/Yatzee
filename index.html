@@ -250,9 +250,45 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
 .winner-line{font-size:15px;padding:8px 0;border-bottom:1px solid var(--ivory-2);display:flex;justify-content:space-between}
 .winner-line.first{color:var(--brass-deep);font-weight:900;font-size:18px}
 .warn{font-size:12px;color:#9a3d2f;background:#f7e9e4;padding:10px 12px;border-radius:10px;margin-top:12px}
+/* ---- Multijoueur & mise à jour ---- */
+.turn-banner{display:none;align-items:center;gap:10px;justify-content:space-between;
+  margin:0 12px 10px;padding:11px 14px;border-radius:12px;
+  background:#123c2a;border:1px solid var(--felt-line);color:var(--ivory);font-size:15px}
+.turn-banner.mine{background:linear-gradient(90deg,rgba(203,161,74,.28),#1b5137);border-color:var(--brass)}
+.turn-banner b{font-weight:800}
+.turn-banner .who-btn{background:rgba(255,255,255,.08);border:1px solid var(--felt-line);
+  color:var(--ivory);font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;white-space:nowrap}
+#endTurnBtn{display:none;width:100%;margin-top:10px;padding:13px;border-radius:12px;
+  background:linear-gradient(180deg,#e7c15a,var(--brass));color:#20180a;font-weight:800;font-size:15px}
+#sheet input:disabled{color:#5f6f66;-webkit-text-fill-color:#5f6f66;background:transparent;opacity:.75}
+.idpick{padding:13px;border-radius:11px;background:#1b5137;color:var(--ivory);font-weight:700;border:1px solid var(--felt-line)}
+.update-bar{display:none;align-items:center;justify-content:center;gap:12px;position:sticky;top:0;z-index:60;
+  background:var(--brass);color:#20180a;font-weight:700;font-size:14px;padding:10px 14px;text-align:center}
+.update-bar button{background:#20180a;color:var(--ivory);font-weight:800;padding:7px 14px;border-radius:9px;font-size:13px}
+.version-tag{position:fixed;left:9px;bottom:calc(env(safe-area-inset-bottom) + 6px);
+  font-size:10px;letter-spacing:.05em;color:#6f8a7c;z-index:5;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:200;
+  background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);
+  padding:11px 16px;border-radius:12px;font-size:13.5px;font-weight:600;max-width:86%;text-align:center;
+  opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
+.spec-overlay{display:none;position:fixed;left:0;right:0;bottom:0;z-index:34;
+  justify-content:center;padding:0 8px calc(env(safe-area-inset-bottom) + 8px);pointer-events:none}
+.spec-card{pointer-events:auto;width:100%;max-width:520px;
+  background:rgba(9,26,18,.94);backdrop-filter:blur(8px);
+  border:1px solid var(--felt-line);border-top-color:var(--brass);
+  border-radius:18px 18px 0 0;box-shadow:0 -14px 34px rgba(0,0,0,.45);
+  padding:14px 16px 14px}
+.spec-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:10px;color:#e6f2ea}
+.spec-dice{display:flex;gap:8px;justify-content:center;perspective:600px;margin-bottom:10px;min-height:52px;flex-wrap:wrap}
+.spec-dice .die{transform:scale(.82);transform-origin:center}
+.spec-status{text-align:center;font-size:14px;font-weight:700;color:#cfe8d9;min-height:19px}
+.spec-foot{text-align:center;font-size:11px;line-height:1.4;color:#8fae9e;margin-top:9px}
 </style>
 </head>
 <body>
+
+<div class="update-bar" id="updateBar">🔄 Nouvelle version disponible<button id="updateBtn">Mettre à jour</button></div>
 
 <header>
   <div class="brand">
@@ -294,6 +330,7 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
 
   <!-- ============ GAME ============ -->
   <section class="screen" id="gameScreen">
+    <div class="turn-banner" id="turnBanner"></div>
     <div class="sheet-wrap">
       <div class="sheet-scroll">
         <table id="sheet"></table>
@@ -310,7 +347,18 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
           <button class="roll-btn" id="rollBtn">Lancer</button>
           <div class="rolls">Lancers<br><b id="rollsLeft">3</b></div>
         </div>
+        <button id="endTurnBtn">Terminer le tour ✓</button>
         <p class="tray-hint">Touche un dé pour le garder · touche un score suggéré pour l'inscrire</p>
+      </div>
+    </div>
+
+    <!-- Spectateur : ce que voient les autres pendant qu'un joueur joue -->
+    <div class="spec-overlay" id="specOverlay">
+      <div class="spec-card">
+        <div class="spec-title" id="specTitle"></div>
+        <div class="spec-dice" id="specDice"></div>
+        <div class="spec-status" id="specStatus"></div>
+        <div class="spec-foot">👀 Tu regardes — c'est verrouillé, personne ne peut lancer ni inscrire à ta place. Tu joueras à ton tour.</div>
       </div>
     </div>
 
@@ -322,6 +370,9 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
     </div>
   </section>
 </main>
+
+<div class="toast" id="toast"></div>
+<div class="version-tag" id="versionTag"></div>
 
 <!-- Modals -->
 <div class="modal-bg" id="modalBg">
@@ -396,6 +447,7 @@ function newState(){
     dice:[1,2,3,4,5].map(()=>({v:1,held:false})),
     spin:[0,0,0,0,0],
     rollsLeft:3,
+    turnPlaced:null,        // catégorie inscrite pendant CE tour (anti-triche + correction)
     room:null,
     updated:Date.now()
   };
@@ -475,6 +527,67 @@ function refreshStart(){
 }
 
 /* ============================================================
+   Version, toast, identité appareil & tour de jeu (en ligne)
+   ============================================================ */
+const APP_VERSION="1.2.0";
+let toastT=null;
+function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
+
+function myId(){const id=store.get("ameya_me");return (id&&state.players.some(p=>p.id===id))?id:null;}
+function isMultiplayer(){return !!(state&&state.room);}
+function isMyTurn(){return !isMultiplayer()||myId()===state.active;}
+function canEdit(pid){return !isMultiplayer()||(isMyTurn()&&myId()===pid);}
+// Verrou fin par case : pendant mon tour je ne peux toucher que MA colonne,
+// une case vide OU celle que je viens d'inscrire (pour corriger). Impossible
+// de modifier mes scores des tours passés ni d'en inscrire deux dans le même tour.
+function canEditCell(pid,k){
+  if(!isMultiplayer())return true;
+  if(!(isMyTurn()&&myId()===pid))return false;
+  const filled=typeof (state.scores[pid]||{})[k]==="number";
+  if(state.turnPlaced==null) return !filled;      // rien encore inscrit ce tour
+  return k===state.turnPlaced;                    // sinon, seule la case du tour est modifiable
+}
+function activeName(){const p=state.players.find(x=>x.id===state.active);return p?(p.name||"—"):"—";}
+function meName(){const p=state.players.find(x=>x.id===myId());return p?(p.name||"moi"):null;}
+
+function chooseIdentity(){
+  const btns=state.players.map(p=>`<button class="idpick" data-id="${p.id}" style="display:block;width:100%;margin:6px 0">${escapeHtml(p.name||"—")}</button>`).join("");
+  openModal(`<h3>Qui es-tu&nbsp;?</h3>
+    <p>Choisis ton nom sur cet appareil. Tu ne pourras lancer les dés et inscrire un score que pendant <b>ton</b> tour.</p>
+    ${btns}
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Plus tard</button></div>`);
+  $$(".idpick").forEach(b=>b.addEventListener("click",()=>{
+    store.set("ameya_me",b.dataset.id);closeModal();
+    renderSheet();
+    if(state.physical===false){renderActivePick();renderDice(false);renderSuggest();}
+    updateTurnUI();
+    updateSpectator(false);
+  }));
+}
+
+let lastTurnPopup=null;
+function updateTurnUI(){
+  const banner=$("#turnBanner"),et=$("#endTurnBtn");
+  if(!isMultiplayer()){if(banner)banner.style.display="none";if(et)et.style.display="none";return;}
+  const me=myId(),mine=me===state.active;
+  if(banner){
+    banner.style.display="flex";
+    banner.className="turn-banner"+(mine?" mine":"");
+    banner.innerHTML=(mine?`<b>🎲 À toi de jouer</b>`:`<b>⏳ Au tour de ${escapeHtml(activeName())}</b>`)
+      +`<button class="who-btn" id="whoBtn">${me?("👤 "+escapeHtml(meName()||"moi")):"👤 Qui suis-je ?"}</button>`;
+    const wb=$("#whoBtn");if(wb)wb.addEventListener("click",chooseIdentity);
+  }
+  if(et)et.style.display=mine?"block":"none";
+  if(mine && lastTurnPopup!==state.active){
+    lastTurnPopup=state.active;
+    openModal(`<h3>🎲 À toi de jouer&nbsp;!</h3>
+      <p>Lance les dés (jusqu'à 3 fois, en gardant ceux que tu veux), inscris ton score, puis appuie sur <b>Terminer le tour</b>. Tu peux corriger ton score tant que tu n'as pas terminé.</p>
+      <div class="modal-row"><button class="ok" onclick="closeModal()">C'est parti</button></div>`);
+  }
+  if(!mine)lastTurnPopup=null;
+}
+
+/* ============================================================
    Rendu — Feuille de scores
    ============================================================ */
 function renderSheet(){
@@ -526,15 +639,21 @@ function catRow(c,players){
   players.forEach(p=>{
     const s=playerScores(p.id);
     const val=typeof s[c.k]==="number"?s[c.k]:"";
-    r+=`<td class="cell"><input inputmode="numeric" data-p="${p.id}" data-k="${c.k}" value="${val}" placeholder="·"></td>`;
+    r+=`<td class="cell"><input inputmode="numeric" data-p="${p.id}" data-k="${c.k}" value="${val}" placeholder="·" ${canEditCell(p.id,c.k)?"":"disabled"}></td>`;
   });
   return r+"</tr>";
 }
 function setScore(pid,k,val){
+  // garde anti-triche : en ligne, on ne peut écrire que dans une case autorisée
+  if(isMultiplayer() && val!=null && !canEditCell(pid,k)){toast("Un seul score par tour");renderSheet();return;}
   if(!state.scores[pid])state.scores[pid]={};
   if(val==null)delete state.scores[pid][k];
   else state.scores[pid][k]=val;
-  // recalcul sur place des cellules dérivées sans tout re-render (évite de perdre le focus)
+  // suivi du score inscrit ce tour (en ligne, pour mon propre tour)
+  if(isMultiplayer() && isMyTurn() && myId()===pid){
+    if(val!=null) state.turnPlaced=k;
+    else if(k===state.turnPlaced) state.turnPlaced=null;
+  }
   updateDerived();
   save();
 }
@@ -580,6 +699,7 @@ function buildDie(i){
   const cube=die.querySelector(".cube");
   applyDieRotation(cube,state.dice[i].v,state.spin[i]);
   die.addEventListener("click",()=>{
+    if(!isMyTurn())return;
     if(state.rollsLeft===3)return; // rien à garder avant le 1er lancer
     state.dice[i].held=!state.dice[i].held;
     die.classList.toggle("held",state.dice[i].held);
@@ -591,49 +711,55 @@ function applyDieRotation(cube,v,spin){
   const r=FACE_ROT[v];
   cube.style.transform=`rotateX(${r.x - 360*spin}deg) rotateY(${r.y - 360*spin}deg)`;
 }
-function renderDice(){
-  const tray=$("#diceTray");tray.innerHTML="";
-  state.dice.forEach((d,i)=>tray.appendChild(buildDie(i)));
+function renderDice(animate){
+  const tray=$("#diceTray");
+  if(tray.children.length!==5){
+    tray.innerHTML="";
+    for(let i=0;i<5;i++)tray.appendChild(buildDie(i));
+  }
+  state.dice.forEach((d,i)=>{
+    const die=tray.children[i];
+    die.classList.toggle("held",!!d.held);
+    const cube=die.querySelector(".cube");
+    if(animate && !d.held){die.classList.add("rolling");setTimeout(()=>die.classList.remove("rolling"),950);}
+    applyDieRotation(cube,d.v,state.spin[i]||0);
+  });
   $("#rollsLeft").textContent=state.rollsLeft;
-  $("#rollBtn").disabled=state.rollsLeft<=0;
-  $("#rollBtn").textContent=state.rollsLeft===3?"Lancer les dés":"Relancer";
+  const rb=$("#rollBtn");
+  rb.disabled=state.rollsLeft<=0 || !isMyTurn();
+  rb.textContent=state.rollsLeft===3?"Lancer les dés":"Relancer";
 }
 function rollDice(){
   if(state.rollsLeft<=0)return;
-  const tray=$("#diceTray");
+  if(!isMyTurn()){toast("Ce n'est pas ton tour");return;}
   state.dice.forEach((d,i)=>{
     if(d.held)return;
     d.v=1+Math.floor(Math.random()*6);
     state.spin[i]=(state.spin[i]||0)+3+Math.floor(Math.random()*3); // tours en plus
-    const die=tray.children[i];
-    const cube=die.querySelector(".cube");
-    die.classList.add("rolling");
-    // léger rebond
-    requestAnimationFrame(()=>applyDieRotation(cube,d.v,state.spin[i]));
-    setTimeout(()=>die.classList.remove("rolling"),950);
   });
   state.rollsLeft--;
-  $("#rollsLeft").textContent=state.rollsLeft;
-  $("#rollBtn").disabled=state.rollsLeft<=0;
-  $("#rollBtn").textContent="Relancer";
-  save();
+  renderDice(true);
+  save();               // pousse aux autres appareils, qui rejouent l'animation
   setTimeout(renderSuggest,300);
 }
 function resetTurn(){
   state.dice.forEach(d=>d.held=false);
   state.rollsLeft=3;
-  save();renderDice();renderSuggest();
+  state.turnPlaced=null;
+  save();renderDice(false);renderSuggest();
 }
 
 /* ---- sélecteur de joueur actif + suggestions ---- */
 function renderActivePick(){
   const box=$("#activePick");box.innerHTML=`<span class="lbl">Au tour de</span>`;
   if(!state.active&&state.players[0])state.active=state.players[0].id;
+  const online=isMultiplayer();
   state.players.forEach(p=>{
     const c=document.createElement("button");
     c.className="chip"+(state.active===p.id?" sel":"");
     c.textContent=p.name||"—";
-    c.addEventListener("click",()=>{state.active=p.id;save();renderActivePick();renderSuggest();});
+    if(online){c.disabled=true;c.style.opacity=state.active===p.id?"1":".45";}
+    else{c.addEventListener("click",()=>{state.active=p.id;save();renderActivePick();renderSuggest();renderDice(false);});}
     box.appendChild(c);
   });
 }
@@ -641,22 +767,28 @@ function renderSuggest(){
   const box=$("#suggest");box.innerHTML="";
   if(state.rollsLeft===3){box.innerHTML=`<span style="color:#8fae9e;font-size:12px;align-self:center">Lance les dés pour voir les scores possibles →</span>`;return;}
   const sc=playerScores(state.active);
+  const mine=isMyTurn();
   CATS.forEach(c=>{
     const val=computeCategory(c.k,state.dice);
     const taken=typeof sc[c.k]==="number";
     const b=document.createElement("button");
     b.className="sugg"+(val===0?" zero":"");
-    b.disabled=taken;
+    b.disabled=taken || !mine || (isMultiplayer() && state.turnPlaced!=null && state.turnPlaced!==c.k);
     b.innerHTML=`${c.face?c.face:c.l.slice(0,6)}<b>${val}</b>`;
     b.title=c.l;
     if(taken)b.style.textDecoration="line-through";
     b.addEventListener("click",()=>{
+      if(!isMyTurn())return;
       setScore(state.active,c.k,val);
-      // met à jour l'input correspondant
       const inp=document.querySelector(`#sheet input[data-p="${state.active}"][data-k="${c.k}"]`);
       if(inp)inp.value=val;
-      autoNextPlayer();
-      resetTurn();
+      if(isMultiplayer()){
+        // pas d'avance auto : on peut corriger, puis "Terminer le tour"
+        renderSheet();renderSuggest();updateTurnUI();
+        toast("Score inscrit — corrige si besoin, puis Termine ton tour");
+      }else{
+        autoNextPlayer();resetTurn();renderSheet();
+      }
     });
     box.appendChild(b);
   });
@@ -668,6 +800,69 @@ function autoNextPlayer(){
 }
 
 /* ============================================================
+   Vue spectateur : ce que voient les AUTRES joueurs en direct
+   (dés qui roulent + résultat + score inscrit par le lanceur)
+   ============================================================ */
+let specActive=null, specKeys=[];
+const SPEC_PLACE={1:`rotateY(0deg) translateZ(28px)`,2:`rotateX(90deg) translateZ(28px)`,
+  3:`rotateY(90deg) translateZ(28px)`,4:`rotateY(-90deg) translateZ(28px)`,
+  5:`rotateX(-90deg) translateZ(28px)`,6:`rotateY(180deg) translateZ(28px)`};
+function renderSpecDice(animate){
+  const box=$("#specDice");
+  if(box.children.length!==5){
+    box.innerHTML="";
+    for(let i=0;i<5;i++){
+      const die=document.createElement("div");die.className="die";
+      let faces="";for(let v=1;v<=6;v++)faces+=`<div class="face" data-v="${v}">${pipGrid(v)}</div>`;
+      die.innerHTML=`<div class="held-tag">Gardé</div><div class="cube">${faces}</div>`;
+      die.querySelectorAll(".face").forEach(f=>f.style.transform=SPEC_PLACE[+f.dataset.v]);
+      box.appendChild(die);
+    }
+  }
+  state.dice.forEach((d,i)=>{
+    const die=box.children[i];
+    die.classList.toggle("held",!!d.held);
+    const cube=die.querySelector(".cube");
+    if(animate && !d.held){die.classList.add("rolling");setTimeout(()=>die.classList.remove("rolling"),950);}
+    applyDieRotation(cube,d.v,state.spin[i]||0);
+  });
+}
+function updateSpectator(animate){
+  const ov=$("#specOverlay");
+  const inGame=$("#gameScreen").classList.contains("active");
+  const spectating = inGame && isMultiplayer() && state.physical===false && !!myId() && myId()!==state.active;
+  if(!spectating){
+    ov.style.display="none";
+    // rétablit le plateau interactif si on est bien en jeu, dés virtuels
+    if(inGame && state.physical===false) $("#tray").style.display="block";
+    specActive=state.active; specKeys=Object.keys(state.scores[state.active]||{});
+    return;
+  }
+  // mode spectateur : on masque le plateau interactif, on montre la popup
+  $("#tray").style.display="none";
+  ov.style.display="flex";
+  $("#specTitle").innerHTML=`🎲 <b>${escapeHtml(activeName())}</b> est en train de jouer`;
+  renderSpecDice(animate);
+
+  // détection d'un nouveau score inscrit par le lanceur
+  if(specActive!==state.active){ specActive=state.active; specKeys=Object.keys(state.scores[state.active]||{}); }
+  const curKeys=Object.keys(state.scores[state.active]||{});
+  const newKeys=curKeys.filter(k=>!specKeys.includes(k));
+  specKeys=curKeys;
+
+  const rollsDone=3-state.rollsLeft;
+  const sum=state.dice.reduce((a,d)=>a+d.v,0);
+  if(newKeys.length){
+    const k=newKeys[0], cat=CATS.find(c=>c.k===k), val=state.scores[state.active][k];
+    $("#specStatus").innerHTML=`✅ ${escapeHtml(activeName())} inscrit <b>${cat?cat.l:k}</b> = ${val}`;
+  }else if(rollsDone===0){
+    $("#specStatus").textContent=`En attente du lancer…`;
+  }else{
+    $("#specStatus").innerHTML=`Lancer <b>${rollsDone}</b>/3 · total <b>${sum}</b>`;
+  }
+}
+
+/* ============================================================
    Navigation
    ============================================================ */
 function goGame(){
@@ -676,13 +871,17 @@ function goGame(){
   renderSheet();
   if(state.physical===false){
     $("#tray").style.display="block";
-    renderActivePick();renderDice();renderSuggest();
+    renderActivePick();renderDice(false);renderSuggest();
   }else{
     $("#tray").style.display="none";
   }
   $("#subtitle").textContent=state.physical?"Dés physiques":"Dés virtuels";
+  if(isMultiplayer() && !myId()) chooseIdentity();
+  updateTurnUI();
+  updateSpectator(false);
 }
 function goSetup(){
+  $("#specOverlay").style.display="none";
   $("#gameScreen").classList.remove("active");
   $("#setupScreen").classList.add("active");
   renderSetup();
@@ -824,13 +1023,21 @@ async function connectRoom(){
     db.onValue(roomRef,snap=>{
       const v=snap.val();
       if(!v||v.updated<=state.updated)return;
+      const prevSpin=(state.spin||[]).slice();
       remoteApplying=true;
       state=v;
       remoteApplying=false;
       store.set("yams_state",JSON.stringify(state));
       if($("#gameScreen").classList.contains("active")){
         renderSheet();
-        if(state.physical===false){renderActivePick();renderDice();renderSuggest();}
+        if(state.physical===false){
+          renderActivePick();
+          const rolled=(state.spin||[]).some((s,i)=>s!==(prevSpin[i]||0));
+          renderDice(rolled);
+          renderSuggest();
+        }
+        updateTurnUI();
+        updateSpectator(rolled);
       }
       updateStatus();
     });
@@ -888,10 +1095,46 @@ $("#shareBtn").addEventListener("click",showShare);
 $("#winBtn").addEventListener("click",showRanking);
 $("#historyBtn").addEventListener("click",showHistory);
 $("#resetBtn").addEventListener("click",confirmReset);
+$("#endTurnBtn").addEventListener("click",()=>{
+  if(!isMyTurn())return;
+  autoNextPlayer();   // passe au joueur suivant
+  resetTurn();        // dés remis à zéro (save + push)
+  renderSheet();updateTurnUI();updateSpectator(false);
+});
+
+/* ============================================================
+   Mise à jour de l'appli (service worker)
+   ============================================================ */
+let swReg=null;
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      swReg=reg;
+      if(reg.waiting && navigator.serviceWorker.controller) showUpdate();
+      reg.addEventListener("updatefound",()=>{
+        const nw=reg.installing;if(!nw)return;
+        nw.addEventListener("statechange",()=>{
+          if(nw.state==="installed" && navigator.serviceWorker.controller) showUpdate();
+        });
+      });
+    }).catch(()=>{});
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(refreshing)return;refreshing=true;location.reload();
+    });
+  });
+}
+function showUpdate(){const b=$("#updateBar");if(b)b.style.display="flex";}
+const _ub=$("#updateBtn");
+if(_ub)_ub.addEventListener("click",()=>{
+  if(swReg&&swReg.waiting)swReg.waiting.postMessage({type:"SKIP_WAITING"});
+  else location.reload();
+});
 
 /* ============================================================
    Init
    ============================================================ */
+const _vt=$("#versionTag");if(_vt)_vt.textContent="Ameya Games · v"+APP_VERSION;
 load();
 updateStatus();
 if(state.physical!==null && state.players.some(p=>p.name.trim())){
