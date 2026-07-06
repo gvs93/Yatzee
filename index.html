@@ -98,8 +98,8 @@ h1 .g{color:var(--brass)}
 
   <div class="grid" id="grid"></div>
 
-  <p class="hint" id="hint">Un seul jeu est prêt pour l'instant (Yam's). Les autres arrivent un par un —
-    dis-moi lequel tu veux en priorité et on le construit.</p>
+  <p class="hint" id="hint">Trois jeux sont prêts (Yam's, Mots de code, La Mine). Les autres arrivent un par un —
+    ordre prévu : Les Rues, Jour de paie, puis Merveilles.</p>
   <div class="foot" id="foot">Ameya Games · Salle de jeux v1.0</div>
 </div>
 
@@ -114,7 +114,11 @@ const GAMES=[
 
   {name:"Mots de code", fac:"façon Codenames", emoji:"🕵️", accent:"#3f7fbf",
    desc:"Deux équipes, un maître-espion donne des indices pour retrouver ses mots.",
-   players:"4–12", time:"15 min", online:true, status:"soon"},
+   players:"4–12", time:"15 min", online:true, status:"play", url:"./codenames.html"},
+
+  {name:"La Mine", fac:"façon Saboteur", emoji:"⛏️", accent:"#7a5a2e",
+   desc:"Chercheurs d'or contre saboteurs cachés : creusez la galerie… ou faites-la échouer.",
+   players:"3–10", time:"25 min", online:true, status:"play", url:"./lamine.html"},
 
   {name:"Sixième carte", fac:"façon 6 qui prend", emoji:"🐂", accent:"#c46a3a",
    desc:"On pose ses cartes en même temps, pas de ramasser la 6ᵉ. Nerveux et fun.",
@@ -151,6 +155,10 @@ const GAMES=[
   {name:"Conquête", fac:"façon Risk", emoji:"🗺️", accent:"#a5463a",
    desc:"Conquête de territoires : renforts, attaques et stratégie.",
    players:"2–6", time:"60 min", online:true, status:"soon"},
+
+  {name:"Merveilles", fac:"façon 7 Wonders", emoji:"🏛️", accent:"#b8892f",
+   desc:"Bâtis ta cité en 3 âges : ressources, cartes en éventail et points de victoire.",
+   players:"3–7", time:"30 min", online:true, status:"soon"},
 
   {name:"Le jeu des cheveux", fac:"à préciser", emoji:"💇", accent:"#c98aa0",
    desc:"Celui-là je ne le connais pas — explique-moi la règle et je le fais.",
