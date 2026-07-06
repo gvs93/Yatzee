@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#123c2a">
+<title>Ameya Games — Les Rues</title>
+<meta name="apple-mobile-web-app-title" content="Les Rues">
+<style>
+:root{--felt:#1b5137;--felt-dark:#123c2a;--felt-line:#2a6b4a;--ivory:#f4efe4;--ivory-2:#eae3d2;--ink:#16241d;
+  --brass:#cba14a;--brass-deep:#a67f2e;--red:#b53d2c;--shadow:rgba(9,26,18,.45)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:radial-gradient(120% 80% at 50% -10%,#2a6b4a,var(--felt) 42%,var(--felt-dark));background-attachment:fixed;
+  color:var(--ivory);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 10px) 8px calc(env(safe-area-inset-bottom) + 16px)}
+.wrap{max-width:560px;margin:0 auto}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.back{font-size:13px;font-weight:700;color:#bcd6c6;text-decoration:none}
+.htitle{flex:1;text-align:center;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:15px}
+.htitle .g{color:var(--brass)}
+.status{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;color:#bcd6c6;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#7f8a83}.dot.online{background:#57c98a}.dot.offline{background:#e0a23a}.dot.sync{background:#57c98a;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.menu-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid var(--felt-line);color:var(--ivory);font-size:18px;display:none;align-items:center;justify-content:center}
+header.in-game .menu-btn{display:flex}
+.screen{display:none}.screen.active{display:block;animation:fade .3s}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.card{background:var(--ivory);color:var(--ink);border-radius:18px;padding:20px 16px;box-shadow:0 16px 36px var(--shadow),inset 0 1px 0 #fff;margin-top:12px}
+.card h2{margin:0 0 4px;font-size:16px}.card p{margin:0 0 14px;font-size:13px;color:#6c7a70;line-height:1.5}
+.primary{width:100%;padding:15px;border-radius:13px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.primary:disabled{opacity:.5}
+.ghost{width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1.5px solid #d6cdb8;color:#6c7a70;font-weight:700;background:#fbf8f1}
+.prow{display:flex;align-items:center;gap:8px;margin-bottom:8px}.prow .num{width:26px;height:26px;border-radius:50%;background:var(--felt);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto}
+.prow input{flex:1;padding:11px 12px;border-radius:11px;border:1.5px solid var(--ivory-2);font-size:16px;color:var(--ink)}
+.prow .rm{width:34px;height:34px;border-radius:10px;background:#f0eadd;color:#9a3d2f;font-size:18px;font-weight:800}
+.add-btn{width:100%;margin-top:4px;padding:11px;border-radius:11px;border:1.5px dashed #c9bda0;color:#6c7a70;font-weight:700;background:#faf7ef}
+.code-in{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--ivory-2);font-size:20px;text-align:center;letter-spacing:.3em;text-transform:uppercase;font-weight:800;color:var(--ink)}
+.turnbar{background:#0f3323;border:1px solid var(--felt-line);border-radius:11px;padding:8px 12px;margin-bottom:8px;text-align:center;font-weight:700;font-size:14px}
+.turnbar.mine{background:linear-gradient(90deg,rgba(203,161,74,.25),#1b5137);border-color:var(--brass)}
+.turnbar.win{border-color:var(--brass);font-size:15px}
+.pstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
+.pl{flex:0 0 auto;background:#0e3020;border:1.5px solid var(--felt-line);border-radius:10px;padding:6px 9px;min-width:76px;text-align:center}
+.pl.turn{border-color:var(--brass);background:#14472f}.pl.dead{opacity:.4}
+.pl .nm{font-size:12px;font-weight:800;white-space:nowrap;display:flex;align-items:center;gap:4px;justify-content:center}
+.pl .tk{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pl .mo{font-size:12px;color:#e7d9b4;font-weight:800;margin-top:2px}
+/* board */
+.boardwrap{display:flex;justify-content:center}
+.board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);width:min(92vw,440px);height:min(92vw,440px);gap:0;background:#0e2b1e;border:2px solid var(--felt-line);border-radius:10px;overflow:hidden}
+.sp{position:relative;border:.5px solid #12352450;font-size:6.5px;line-height:1.02;padding:1px;overflow:hidden;background:#e9e2d0;color:#1a2a20;font-weight:700}
+.sp .cbar{height:5px;width:100%;margin:-1px -1px 1px}
+.sp .nm{display:block;text-transform:uppercase;letter-spacing:-.02em}
+.sp .pr{color:#5a6b60;font-weight:800}
+.sp.corner{font-size:7px;display:flex;align-items:center;justify-content:center;text-align:center;background:#ded4bd;padding:2px}
+.sp .toks{position:absolute;bottom:1px;right:1px;display:flex;flex-wrap:wrap;gap:1px;justify-content:flex-end;max-width:70%}
+.sp .toks span{width:6px;height:6px;border-radius:50%;border:.5px solid #0006}
+.sp .own{position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:2px;border:1px solid #0006}
+.sp .hh{position:absolute;top:5px;left:1px;font-size:6px;color:#1f6b45;font-weight:900}
+.sp.mort{background:#c9bda0}
+.center{grid-column:2 / 11;grid-row:2 / 11;background:#12352a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;text-align:center}
+.center .logo{font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-size:13px}
+.dice{display:flex;gap:8px}
+.die{width:30px;height:30px;border-radius:7px;background:var(--ivory);color:#111;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;box-shadow:0 2px 5px #0006}
+.center .info{font-size:11px;color:#bcd6c6;font-weight:600}
+/* actions */
+.actbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.act{flex:1;min-width:130px;padding:14px;border-radius:12px;font-weight:800;font-size:15px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007}
+.act:disabled{opacity:.45}
+.act.sec{background:#0f3323;color:#e7d9b4;border:1.5px solid var(--felt-line)}
+.act.red{background:#8a3123;color:#fff}
+.hint{text-align:center;font-size:12.5px;color:#a9c6b6;margin:8px 0;font-weight:600;min-height:16px}
+.log{margin-top:8px;font-size:11.5px;color:#9fc0ad;line-height:1.6;max-height:88px;overflow:auto}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:#06170fcc;z-index:60;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.show{display:flex}
+.modal{background:var(--ivory);color:var(--ink);border-radius:18px;padding:18px;max-width:420px;width:100%;box-shadow:0 20px 60px #000a;max-height:88vh;overflow:auto}
+.modal h3{margin:0 0 8px;font-size:17px}.modal p{font-size:13px;color:#5a6b60;margin:0 0 12px;line-height:1.5}
+.mbtn{display:block;width:100%;margin:6px 0;padding:12px;border-radius:11px;background:var(--felt);color:#fff;font-weight:800}
+.mbtn.red{background:#fff;color:var(--red);border:1px solid #e6c4bf}
+.modal-row{display:flex;gap:10px;margin-top:8px}.modal-row button{flex:1;padding:12px;border-radius:11px;font-weight:800}
+.modal-row .cancel{background:#e8e1d0;color:#5a6b60}.modal-row .ok{background:var(--felt);color:#fff}
+.seat{display:block;width:100%;margin:6px 0;padding:13px;border-radius:11px;background:#1b5137;color:#fff;font-weight:800}
+.propitem{border:1px solid #e0d8c4;border-radius:10px;padding:8px;margin-bottom:7px}
+.propitem .ph{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px}
+.propitem .cb{width:12px;height:12px;border-radius:3px}
+.propitem .pa{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.propitem .pa button{flex:1;min-width:70px;padding:8px;border-radius:8px;font-size:11px;font-weight:800;background:#eee6d5;color:#2a3a30}
+.propitem .pa button:disabled{opacity:.4}
+.warn{font-size:12px;color:#9a3d2f;background:#f7e9e4;padding:9px;border-radius:9px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:600;max-width:88%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.vtag{text-align:center;color:#6f8a7c;font-size:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header id="header">
+    <a class="back" href="./index.html">← Ameya</a>
+    <div class="htitle">Les <span class="g">Rues</span></div>
+    <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Local</span></div>
+    <button class="menu-btn" id="menuBtn">☰</button>
+  </header>
+
+  <section class="screen active" id="homeScreen">
+    <div class="card">
+      <h2>Les Rues <span style="font-size:12px;color:#9aa89e;font-weight:600">— façon Monopoly</span></h2>
+      <p>Achetez des rues, encaissez les loyers, construisez maisons et hôtels, et ruinez les copains. 2 à 6 joueurs, chacun sur son téléphone.</p>
+      <button class="primary" id="createBtn">Créer une partie</button>
+      <button class="ghost" id="joinBtn">Rejoindre avec un code</button>
+    </div>
+    <div class="vtag" id="vtagHome"></div>
+  </section>
+
+  <section class="screen" id="setupScreen">
+    <div class="card">
+      <h2>Les joueurs (2 à 6)</h2>
+      <p>Chaque joueur reçoit 1500 € pour démarrer.</p>
+      <div id="seatList"></div>
+      <button class="add-btn" id="addSeat">+ Ajouter un joueur</button>
+      <button class="primary" id="startBtn" style="margin-top:14px" disabled>Commencer</button>
+      <button class="ghost" id="backHome">Retour</button>
+    </div>
+  </section>
+
+  <section class="screen" id="gameScreen">
+    <div class="turnbar" id="turnBar"></div>
+    <div class="pstrip" id="pstrip"></div>
+    <div class="boardwrap"><div class="board" id="board"></div></div>
+    <div class="hint" id="hint"></div>
+    <div class="actbar" id="actbar"></div>
+    <div class="log" id="log"></div>
+    <div class="vtag" id="vtag"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+
+<script>
+"use strict";
+const APP_VERSION="1.0.0";
+const store=(()=>{let mem={},ok=false;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}
+  return{get(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
+  set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+const FIREBASE_CONFIG={apiKey:"AIzaSyAnt2oiCjl8JLzUvBswUDHaBZ3GM53y9Ck",authDomain:"ameyatzee.firebaseapp.com",
+  databaseURL:"https://ameyatzee-default-rtdb.europe-west1.firebasedatabase.app",projectId:"ameyatzee",
+  storageBucket:"ameyatzee.firebasestorage.app",messagingSenderId:"690846387677",appId:"1:690846387677:web:0200403f1af5b707ffba34"};
+const SYNC_ENABLED=!!FIREBASE_CONFIG.databaseURL;
+const TOKENS=["#d64545","#3f7fbf","#3f9d6b","#e6c34a","#9a5cb4","#e0863a"];
+const GC={brown:"#7a4a2b",lightblue:"#8ec9e6",pink:"#c85a9c",orange:"#e08a2e",red:"#c0392b",yellow:"#e6c34a",green:"#3f9d6b",darkblue:"#2f4f9e",rail:"#333",util:"#8a9a8f"};
+
+/* plateau (noms originaux) */
+const B=[
+{t:"go",n:"Départ"},
+{t:"street",n:"Rue du Vieux Puits",g:"brown",p:60,h:50,r:[2,10,30,90,160,250]},
+{t:"caisse",n:"Caisse"},
+{t:"street",n:"Ruelle des Lavandières",g:"brown",p:60,h:50,r:[4,20,60,180,320,450]},
+{t:"tax",n:"Impôt sur le revenu",a:200},
+{t:"rail",n:"Gare Ponant",p:200},
+{t:"street",n:"Impasse du Moulin",g:"lightblue",p:100,h:50,r:[6,30,90,270,400,550]},
+{t:"chance",n:"Chance"},
+{t:"street",n:"Rue des Tisserands",g:"lightblue",p:100,h:50,r:[6,30,90,270,400,550]},
+{t:"street",n:"Passage des Écoliers",g:"lightblue",p:120,h:50,r:[8,40,100,300,450,600]},
+{t:"jail",n:"Prison (visite)"},
+{t:"street",n:"Avenue du Marché",g:"pink",p:140,h:100,r:[10,50,150,450,625,750]},
+{t:"util",n:"Cie d'Électricité",p:150},
+{t:"street",n:"Rue de la Fontaine",g:"pink",p:140,h:100,r:[10,50,150,450,625,750]},
+{t:"street",n:"Boulevard des Halles",g:"pink",p:160,h:100,r:[12,60,180,500,700,900]},
+{t:"rail",n:"Gare Levant",p:200},
+{t:"street",n:"Quai des Marchands",g:"orange",p:180,h:100,r:[14,70,200,550,750,950]},
+{t:"caisse",n:"Caisse"},
+{t:"street",n:"Rue de l'Horloge",g:"orange",p:180,h:100,r:[14,70,200,550,750,950]},
+{t:"street",n:"Place du Beffroi",g:"orange",p:200,h:100,r:[16,80,220,600,800,1000]},
+{t:"parking",n:"Parc gratuit"},
+{t:"street",n:"Cours des Platanes",g:"red",p:220,h:150,r:[18,90,250,700,875,1050]},
+{t:"chance",n:"Chance"},
+{t:"street",n:"Avenue des Tilleuls",g:"red",p:220,h:150,r:[18,90,250,700,875,1050]},
+{t:"street",n:"Rond-point des Roses",g:"red",p:240,h:150,r:[20,100,300,750,925,1100]},
+{t:"rail",n:"Gare Midi",p:200},
+{t:"street",n:"Rue des Orfèvres",g:"yellow",p:260,h:150,r:[22,110,330,800,975,1150]},
+{t:"street",n:"Galerie des Arts",g:"yellow",p:260,h:150,r:[22,110,330,800,975,1150]},
+{t:"util",n:"Cie des Eaux",p:150},
+{t:"street",n:"Promenade du Lac",g:"yellow",p:280,h:150,r:[24,120,360,850,1025,1200]},
+{t:"gotojail",n:"Allez en prison"},
+{t:"street",n:"Avenue des Palmiers",g:"green",p:300,h:200,r:[26,130,390,900,1100,1275]},
+{t:"street",n:"Corniche du Phare",g:"green",p:300,h:200,r:[26,130,390,900,1100,1275]},
+{t:"caisse",n:"Caisse"},
+{t:"street",n:"Terrasse Panoramique",g:"green",p:320,h:200,r:[28,150,450,1000,1200,1400]},
+{t:"rail",n:"Gare Septentrion",p:200},
+{t:"chance",n:"Chance"},
+{t:"street",n:"Cours Royal",g:"darkblue",p:350,h:200,r:[35,175,500,1100,1300,1500]},
+{t:"tax",n:"Taxe de luxe",a:100},
+{t:"street",n:"Esplanade des Étoiles",g:"darkblue",p:400,h:200,r:[50,200,600,1400,1700,2000]}
+];
+const RAILS=[5,15,25,35];
+function groupOf(g){const a=[];B.forEach((s,i)=>{if(s.t==="street"&&s.g===g)a.push(i);});return a;}
+
+const CHANCE=[
+{x:"Avancez à la Case Départ (touchez 200 €).",a:"goto",to:0},
+{x:"Allez directement en prison.",a:"jail"},
+{x:"Dividendes : recevez 50 €.",a:"money",m:50},
+{x:"Amende pour excès de vitesse : 15 €.",a:"money",m:-15},
+{x:"Reculez de 3 cases.",a:"back",n:3},
+{x:"Avancez à la gare la plus proche.",a:"rail"},
+{x:"Sortie de prison gratuite — à garder.",a:"getout"},
+{x:"Vous êtes élu : payez 50 € à chaque joueur.",a:"payEach",m:50},
+{x:"Rente : recevez 100 €.",a:"money",m:100},
+{x:"Réparations : payez 25 € par maison et 100 € par hôtel.",a:"repairs",house:25,hotel:100}
+];
+const CAISSE=[
+{x:"Erreur de banque en votre faveur : recevez 200 €.",a:"money",m:200},
+{x:"Frais médicaux : payez 100 €.",a:"money",m:-100},
+{x:"Allez directement en prison.",a:"jail"},
+{x:"Sortie de prison gratuite — à garder.",a:"getout"},
+{x:"C'est votre anniversaire : recevez 10 € de chaque joueur.",a:"collectEach",m:10},
+{x:"Impôts : payez 75 €.",a:"money",m:-75},
+{x:"Remboursement d'assurance : 100 €.",a:"money",m:100},
+{x:"Avancez à la Case Départ.",a:"goto",to:0},
+{x:"Vente de stock : recevez 45 €.",a:"money",m:45},
+{x:"Note d'électricité : payez 40 €.",a:"money",m:-40}
+];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------- état ---------- */
+let state=null,remoteApplying=false;
+function newGame(names){
+  const players=names.map((n,i)=>({id:Math.random().toString(36).slice(2,8),name:n,color:TOKENS[i%TOKENS.length]}));
+  const money={},pos={},jail={},getout={};
+  players.forEach(p=>{money[p.id]=1500;pos[p.id]=0;jail[p.id]=0;getout[p.id]=0;});
+  return{room:null,updated:Date.now(),players,order:shuffle(players.map(p=>p.id)),turn:0,
+    money,pos,jail,getout,props:{},bankrupt:{},dice:[1,1],lastRoll:0,doubles:0,pending:null,
+    chance:shuffle([...CHANCE]),caisse:shuffle([...CAISSE]),phase:"roll",winner:null,
+    log:["🎲 La partie commence — 1500 € chacun."]};
+}
+function normalize(s){
+  if(!s||typeof s!=="object")return null;
+  if(!Array.isArray(s.players)||s.players.length<2)return null;
+  s.order=s.order||s.players.map(p=>p.id);
+  ["money","pos","jail","getout","props","bankrupt"].forEach(k=>s[k]=s[k]||{});
+  s.players.forEach(p=>{if(s.money[p.id]==null)s.money[p.id]=1500;if(s.pos[p.id]==null)s.pos[p.id]=0;
+    if(s.jail[p.id]==null)s.jail[p.id]=0;if(s.getout[p.id]==null)s.getout[p.id]=0;});
+  if(typeof s.turn!=="number")s.turn=0;if(typeof s.doubles!=="number")s.doubles=0;
+  if(!Array.isArray(s.dice))s.dice=[1,1];if(typeof s.lastRoll!=="number")s.lastRoll=0;
+  if(!Array.isArray(s.chance)||!s.chance.length)s.chance=shuffle([...CHANCE]);
+  if(!Array.isArray(s.caisse)||!s.caisse.length)s.caisse=shuffle([...CAISSE]);
+  if(!["roll","buy","end","over"].includes(s.phase))s.phase="roll";
+  if(s.pending===undefined)s.pending=null;
+  if(s.winner===undefined)s.winner=null;
+  if(!Array.isArray(s.log))s.log=[];
+  if(typeof s.updated!=="number")s.updated=0;if(s.room===undefined)s.room=null;
+  return s;
+}
+function save(){state.updated=Date.now();store.set("rues_state",JSON.stringify(state));if(!remoteApplying)pushRemote();}
+function load(){const raw=store.get("rues_state");if(raw){try{state=normalize(JSON.parse(raw));}catch(e){state=null;}}}
+
+/* ---------- identité ---------- */
+function myId(){const id=store.get("rues_me");return (state&&id&&state.players.some(p=>p.id===id))?id:null;}
+function isMultiplayer(){return !!(state&&state.room);}
+function curPid(){return state.order[state.turn];}
+function isMyTurn(){if(state.phase==="over")return false;if(!isMultiplayer())return true;return myId()===curPid();}
+function pobj(id){return state.players.find(p=>p.id===id);}
+function pname(id){const p=pobj(id);return p?p.name:"?";}
+function alive(id){return !state.bankrupt[id];}
+
+/* ---------- propriété helpers ---------- */
+function pd(i){return state.props[i]||{owner:null,houses:0,mortgaged:false};}
+function ownsGroup(pid,g){return groupOf(g).every(i=>pd(i).owner===pid);}
+function groupHouses(g){return groupOf(g).map(i=>pd(i).houses);}
+function railsOwned(pid){return RAILS.filter(i=>pd(i).owner===pid).length;}
+function utilsOwned(pid){let c=0;B.forEach((s,i)=>{if(s.t==="util"&&pd(i).owner===pid)c++;});return c;}
+function calcRent(i,payer){
+  const s=B[i],P=pd(i);if(P.mortgaged||P.owner==null)return 0;
+  if(s.t==="street"){if(P.houses>0)return s.r[P.houses];return ownsGroup(P.owner,s.g)?s.r[0]*2:s.r[0];}
+  if(s.t==="rail"){const c=railsOwned(P.owner);return [0,25,50,100,200][c];}
+  if(s.t==="util"){const c=utilsOwned(P.owner);return state.lastRoll*(c>=2?10:4);}
+  return 0;
+}
+
+/* ---------- flux de jeu ---------- */
+function roll(){
+  if(!isMyTurn()||state.phase!=="roll")return;
+  const pid=curPid();
+  const d1=1+Math.floor(Math.random()*6),d2=1+Math.floor(Math.random()*6);
+  state.dice=[d1,d2];state.lastRoll=d1+d2;const dbl=d1===d2;
+  if(state.jail[pid]>0){
+    if(dbl){state.jail[pid]=0;lg(`${pname(pid)} sort de prison (double)`);advance(pid,d1+d2,false);}
+    else{state.jail[pid]++;if(state.jail[pid]>3){pay(pid,50);state.jail[pid]=0;lg(`${pname(pid)} paie 50 € et sort`);advance(pid,d1+d2,false);}
+      else{lg(`${pname(pid)} reste en prison`);endTurn();}}
+    return;
+  }
+  if(dbl){state.doubles++;if(state.doubles>=3){goJail(pid);lg(`${pname(pid)} : 3 doubles → prison !`);endTurn();return;}}
+  advance(pid,d1+d2,dbl);
+}
+function advance(pid,steps,dbl){
+  let np=state.pos[pid]+steps;
+  if(np>=40){state.money[pid]+=200;np-=40;lg(`${pname(pid)} touche 200 € (Départ)`);}
+  state.pos[pid]=np;state._dbl=dbl;resolve(pid);
+}
+function moveTo(pid,target,collect){
+  let steps=(target-state.pos[pid]+40)%40;
+  if(steps===0&&target!==state.pos[pid])steps=40;
+  let np=state.pos[pid]+steps;
+  if(np>=40&&collect!==false){state.money[pid]+=200;lg(`${pname(pid)} touche 200 € (Départ)`);}
+  state.pos[pid]=np%40;resolve(pid);
+}
+function moveBack(pid,n){let np=state.pos[pid]-n;if(np<0)np+=40;state.pos[pid]=np;resolve(pid);}
+function goJail(pid){state.pos[pid]=10;state.jail[pid]=1;state.doubles=0;}
+function resolve(pid){
+  const i=state.pos[pid],s=B[i];
+  if(s.t==="street"||s.t==="rail"||s.t==="util"){
+    const P=pd(i);
+    if(P.owner==null){state.phase="buy";state.pending={buy:i};save();render();return;}
+    if(P.owner!==pid&&!P.mortgaged){const rent=calcRent(i,pid);payTo(pid,P.owner,rent);lg(`${pname(pid)} paie ${rent} € de loyer à ${pname(P.owner)}`);}
+    afterResolve(pid);return;
+  }
+  if(s.t==="tax"){pay(pid,s.a);lg(`${pname(pid)} paie ${s.a} € (${s.n})`);afterResolve(pid);return;}
+  if(s.t==="gotojail"){goJail(pid);lg(`${pname(pid)} va en prison`);endTurn();return;}
+  if(s.t==="chance"||s.t==="caisse"){drawCard(pid,s.t);return;}
+  afterResolve(pid); // go / parking / jail-visite
+}
+function afterResolve(pid){
+  if(state.money[pid]<0){state.phase="end";lg(`⚠️ ${pname(pid)} a un solde négatif : hypothèque ou faillite.`);save();render();return;}
+  if(state._dbl&&state.jail[pid]===0){state.phase="roll";lg(`${pname(pid)} a fait un double, rejoue.`);}
+  else state.phase="end";
+  save();render();
+}
+function drawCard(pid,type){
+  const deck=state[type];const card=deck.shift();deck.push(card);
+  lg(`🎴 ${pname(pid)} — ${type==="chance"?"Chance":"Caisse"}`);
+  showCard(card,()=>applyCard(pid,card));
+}
+function applyCard(pid,c){
+  switch(c.a){
+    case"money":state.money[pid]+=c.m;lg(`${pname(pid)} ${c.m>=0?"reçoit":"paie"} ${Math.abs(c.m)} €`);afterResolve(pid);break;
+    case"getout":state.getout[pid]++;afterResolve(pid);break;
+    case"goto":moveTo(pid,c.to,true);break;
+    case"back":moveBack(pid,c.n);break;
+    case"rail":{let t=RAILS.find(r=>r>state.pos[pid]);if(t==null)t=RAILS[0];moveTo(pid,t,true);break;}
+    case"jail":goJail(pid);lg(`${pname(pid)} va en prison`);endTurn();break;
+    case"payEach":{let tot=0;state.players.forEach(p=>{if(p.id!==pid&&alive(p.id)){state.money[pid]-=c.m;state.money[p.id]+=c.m;tot+=c.m;}});lg(`${pname(pid)} paie ${c.m} € à chacun`);afterResolve(pid);break;}
+    case"collectEach":{state.players.forEach(p=>{if(p.id!==pid&&alive(p.id)){state.money[p.id]-=c.m;state.money[pid]+=c.m;}});lg(`${pname(pid)} reçoit ${c.m} € de chacun`);afterResolve(pid);break;}
+    case"repairs":{let cost=0;Object.keys(state.props).forEach(k=>{const P=state.props[k];if(P.owner===pid){if(P.houses===5)cost+=c.hotel;else cost+=c.houses*P.houses;}});state.money[pid]-=cost;lg(`${pname(pid)} paie ${cost} € de réparations`);afterResolve(pid);break;}
+    default:afterResolve(pid);
+  }
+}
+function buyProp(){const pid=curPid();if(!isMyTurn()||!state.pending||state.pending.buy==null)return;
+  const i=state.pending.buy,price=B[i].p;
+  if(state.money[pid]<price){toast("Pas assez d'argent");return;}
+  state.money[pid]-=price;state.props[i]={owner:pid,houses:0,mortgaged:false};
+  lg(`${pname(pid)} achète ${B[i].n} (${price} €)`);state.pending=null;afterResolve(pid);}
+function passBuy(){const pid=curPid();if(!isMyTurn())return;state.pending=null;lg(`${pname(pid)} n'achète pas`);afterResolve(pid);}
+function pay(pid,amt){state.money[pid]-=amt;}
+function payTo(from,to,amt){state.money[from]-=amt;state.money[to]+=amt;}
+function endTurn(){
+  if(!isMyTurn()&&state.phase!=="over")return;
+  const pid=curPid();
+  if(state.money[pid]<0){toast("Solde négatif : hypothèque tes biens ou déclare faillite");render();return;}
+  state.doubles=0;state._dbl=false;state.pending=null;
+  do{state.turn=(state.turn+1)%state.order.length;}while(!alive(curPid())&&aliveCount()>1);
+  state.phase="roll";checkWinner();save();render();
+}
+function aliveCount(){return state.players.filter(p=>alive(p.id)).length;}
+function checkWinner(){if(aliveCount()<=1){const w=state.players.find(p=>alive(p.id));state.winner=w?w.id:null;state.phase="over";lg(`🏆 ${w?pname(w.id):"—"} remporte la partie !`);}}
+function declareBankrupt(){const pid=curPid();if(!isMyTurn())return;
+  Object.keys(state.props).forEach(k=>{if(state.props[k].owner===pid)delete state.props[k];});
+  state.bankrupt[pid]=true;lg(`💀 ${pname(pid)} fait faillite.`);
+  state.phase="end";checkWinner();if(state.phase!=="over")endTurn();else{save();render();}}
+
+/* ---------- gestion biens ---------- */
+function canBuild(i){const s=B[i];if(s.t!=="street")return false;const P=pd(i);const pid=P.owner;
+  if(!ownsGroup(pid,s.g))return false;if(groupOf(s.g).some(j=>pd(j).mortgaged))return false;
+  if(P.houses>=5)return false;const mn=Math.min(...groupHouses(s.g));return P.houses<=mn && state.money[pid]>=s.h;}
+function build(i){if(!canBuild(i))return;const s=B[i];state.props[i].houses++;state.money[s.__?0:pd(i).owner]-=0;
+  state.money[pd(i).owner]-=s.h;lg(`${pname(pd(i).owner)} construit sur ${s.n}`);save();manageModal();render();}
+function canSell(i){const s=B[i];if(s.t!=="street")return false;const P=pd(i);if(P.houses<=0)return false;
+  const mx=Math.max(...groupHouses(s.g));return P.houses>=mx;}
+function sell(i){if(!canSell(i))return;const s=B[i];state.props[i].houses--;state.money[pd(i).owner]+=Math.floor(s.h/2);
+  lg(`${pname(pd(i).owner)} revend une maison de ${s.n}`);save();manageModal();render();}
+function canMortgage(i){const P=pd(i);if(P.owner==null||P.mortgaged)return false;const s=B[i];
+  if(s.t==="street"&&groupOf(s.g).some(j=>pd(j).houses>0))return false;return true;}
+function mortgage(i){if(!canMortgage(i))return;const P=state.props[i];P.mortgaged=true;state.money[P.owner]+=Math.floor(B[i].p/2);
+  lg(`${pname(P.owner)} hypothèque ${B[i].n}`);save();manageModal();render();}
+function canUnmort(i){const P=pd(i);return P.owner!=null&&P.mortgaged&&state.money[P.owner]>=Math.ceil(B[i].p*0.55);}
+function unmort(i){if(!canUnmort(i))return;const P=state.props[i];P.mortgaged=false;state.money[P.owner]-=Math.ceil(B[i].p*0.55);
+  lg(`${pname(P.owner)} lève l'hypothèque de ${B[i].n}`);save();manageModal();render();}
+
+/* ---------- rendu ---------- */
+const $=s=>document.querySelector(s);
+function gridPos(i){ // renvoie {col,row} 1-based pour grid
+  if(i<=10)return{c:11-i,r:11};
+  if(i<=20)return{c:1,r:11-(i-10)};
+  if(i<=30)return{c:i-20+1,r:1};
+  return{c:11,r:(i-30)+1};
+}
+function render(){
+  if(!state)return;
+  const tb=$("#turnBar");
+  if(state.phase==="over"){tb.className="turnbar win";tb.innerHTML=`🏆 <b>${state.winner?pname(state.winner):"—"}</b> gagne !`;}
+  else{const mine=isMyTurn();tb.className="turnbar"+(mine?" mine":"");tb.innerHTML=mine?`🎯 <b>À toi de jouer</b>`:`⏳ Au tour de <b>${pname(curPid())}</b>`;}
+  // players
+  const ps=$("#pstrip");ps.innerHTML="";
+  state.order.forEach(id=>{const p=pobj(id);const el=document.createElement("div");
+    el.className="pl"+(id===curPid()&&state.phase!=="over"?" turn":"")+(alive(id)?"":" dead");
+    el.innerHTML=`<div class="nm"><span class="tk" style="background:${p.color}"></span>${escapeHtml(p.name)}${state.jail[id]>0?" 🔒":""}</div><div class="mo">${state.money[id]} €</div>`;
+    ps.appendChild(el);});
+  // board
+  const bd=$("#board");bd.innerHTML="";
+  const center=document.createElement("div");center.className="center";
+  center.innerHTML=`<div class="logo">Les Rues</div><div class="dice"><div class="die">${state.dice[0]}</div><div class="die">${state.dice[1]}</div></div>
+    <div class="info">${state.phase==="over"?"Partie terminée":(isMyTurn()?"À toi":"Au tour de "+pname(curPid()))}</div>`;
+  bd.appendChild(center);
+  for(let i=0;i<40;i++){const s=B[i],P=pd(i);const g=gridPos(i);
+    const el=document.createElement("div");el.style.gridColumn=g.c;el.style.gridRow=g.r;
+    const corner=(i%10===0);
+    el.className="sp"+(corner?" corner":"")+(P.mortgaged?" mort":"");
+    let inner="";
+    if(!corner){
+      const col=s.t==="street"?GC[s.g]:s.t==="rail"?GC.rail:s.t==="util"?GC.util:"transparent";
+      if(s.t==="street"||s.t==="rail"||s.t==="util")inner+=`<span class="cbar" style="background:${col}"></span>`;
+      inner+=`<span class="nm">${escapeHtml(shortName(s))}</span>`;
+      if(s.p)inner+=`<span class="pr">${s.p}</span>`;
+    }else inner=`<div>${escapeHtml(cornerLabel(s))}</div>`;
+    // owner marker + houses
+    if(P.owner!=null)inner+=`<span class="own" style="background:${pobj(P.owner).color}"></span>`;
+    if(P.houses>0)inner+=`<span class="hh">${P.houses===5?"🏨":"🏠"+P.houses}</span>`;
+    // tokens
+    const here=state.order.filter(id=>state.pos[id]===i&&alive(id));
+    if(here.length)inner+=`<span class="toks">${here.map(id=>`<span style="background:${pobj(id).color}"></span>`).join("")}</span>`;
+    el.innerHTML=inner;
+    el.addEventListener("click",()=>cellInfo(i));
+    bd.appendChild(el);
+  }
+  // actions
+  const me=actorId();const hint=$("#hint");const ab=$("#actbar");ab.innerHTML="";
+  const add=(txt,cls,fn,dis)=>{const b=document.createElement("button");b.className="act "+(cls||"");b.textContent=txt;if(dis)b.disabled=true;else b.addEventListener("click",fn);ab.appendChild(b);};
+  if(state.phase==="over"){hint.textContent="Partie terminée.";add("🔄 Rejouer","",()=>{const nm=state.players.map(p=>p.name);const room=state.room;state=newGame(nm);state.players=state.players;state.room=room;save();render();});}
+  else if(isMultiplayer()&&!myId()){hint.textContent="Choisis qui tu es (menu ☰) pour jouer.";}
+  else if(!isMyTurn()){hint.textContent="En attente…";add("💼 Gérer mes biens","sec",manageModal);}
+  else if(state.money[curPid()]<0){hint.textContent=`Solde négatif (${state.money[curPid()]} €) — hypothèque ou faillite.`;
+    add("💼 Gérer / Hypothéquer","sec",manageModal);add("💀 Déclarer faillite","red",declareBankrupt);}
+  else if(state.phase==="roll"){hint.textContent=state.jail[curPid()]>0?"Tu es en prison — lance pour un double (ou paie au 3ᵉ essai).":"À toi de lancer les dés.";
+    if(state.jail[curPid()]>0){add("🎲 Lancer","",roll);add("💸 Payer 50 €","sec",()=>{pay(curPid(),50);state.jail[curPid()]=0;lg(`${pname(curPid())} paie 50 € et sort`);save();render();});
+      if(state.getout[curPid()]>0)add("🎟️ Carte sortie","sec",()=>{state.getout[curPid()]--;state.jail[curPid()]=0;lg(`${pname(curPid())} utilise une carte sortie`);save();render();});}
+    else add("🎲 Lancer les dés","",roll);
+    add("💼 Gérer","sec",manageModal);}
+  else if(state.phase==="buy"){const i=state.pending.buy;hint.textContent=`${B[i].n} — libre à ${B[i].p} €.`;
+    add(`🏷️ Acheter (${B[i].p} €)`,"",buyProp,state.money[curPid()]<B[i].p);add("Passer","sec",passBuy);}
+  else{ // end
+    hint.textContent=state._dbl?"Double ! Tu peux relancer.":"Termine ton tour.";
+    if(state._dbl&&state.jail[curPid()]===0)add("🎲 Relancer","",()=>{state.phase="roll";render();});
+    add("✅ Fin du tour","",endTurn);add("💼 Gérer","sec",manageModal);}
+  $("#log").innerHTML=state.log.map(l=>`<div>${escapeHtml(l)}</div>`).join("");
+  $("#vtag").textContent="Les Rues · v"+APP_VERSION;
+}
+function shortName(s){return s.n.replace(/^(Rue|Avenue|Boulevard|Place|Cours|Quai|Impasse|Ruelle|Passage|Galerie|Promenade|Corniche|Terrasse|Esplanade|Rond-point|Gare|Cie) (de |des |du |d'|de l'|de la )?/i,m=>({}[m]||m)).slice(0,16);}
+function cornerLabel(s){return s.t==="go"?"DÉPART ➡":s.t==="jail"?"PRISON":s.t==="parking"?"PARC GRATUIT":"ALLEZ EN PRISON";}
+function actorId(){return isMultiplayer()?myId():curPid();}
+
+function cellInfo(i){const s=B[i],P=pd(i);
+  let body=`<p style="margin-bottom:6px"><b>${escapeHtml(s.n)}</b></p>`;
+  if(s.t==="street"){
+    let own="Libre";
+    if(P.owner!=null){const h=P.houses===5?" · hôtel":P.houses?(" · "+P.houses+" maison(s)"):"";own="Propriétaire : "+pname(P.owner)+h+(P.mortgaged?" · hypothéqué":"");}
+    body+=`<p style="font-size:12px;line-height:1.6">Groupe : ${s.g}<br>Prix : ${s.p} € · Maison : ${s.h} €<br>Loyers : ${s.r[0]} / ${s.r[1]} / ${s.r[2]} / ${s.r[3]} / ${s.r[4]} · 🏨 ${s.r[5]}<br>${own}</p>`;}
+  else if(s.t==="rail"){body+=`<p style="font-size:12px">Gare — 200 €. Loyer 25/50/100/200 selon le nombre de gares.<br>${P.owner!=null?"Propriétaire : "+pname(P.owner):"Libre"}</p>`;}
+  else if(s.t==="util"){body+=`<p style="font-size:12px">Service — 150 €. Loyer = 4× (ou 10× si les deux) le dé.<br>${P.owner!=null?"Propriétaire : "+pname(P.owner):"Libre"}</p>`;}
+  else body+=`<p style="font-size:12px">${s.t==="tax"?("Payez "+s.a+" €."):s.n}</p>`;
+  openModal(`<h3>Case</h3>${body}<div class="modal-row"><button class="ok" onclick="closeModal()">Fermer</button></div>`);
+}
+function manageModal(){
+  const pid=actorId();if(!pid){toast("Choisis d'abord qui tu es");return;}
+  const mine=[];Object.keys(state.props).forEach(k=>{if(state.props[+k].owner===pid)mine.push(+k);});
+  mine.sort((a,b)=>a-b);
+  let body=`<p>Argent : <b>${state.money[pid]} €</b></p>`;
+  if(!mine.length)body+=`<p>Tu n'as aucun bien pour l'instant.</p>`;
+  mine.forEach(i=>{const s=B[i],P=pd(i);const col=s.t==="street"?GC[s.g]:s.t==="rail"?GC.rail:GC.util;
+    const build_=s.t==="street"&&canBuild(i),sell_=s.t==="street"&&canSell(i),mort_=canMortgage(i),unm_=canUnmort(i);
+    body+=`<div class="propitem"><div class="ph"><span class="cb" style="background:${col}"></span>${escapeHtml(s.n)} ${P.mortgaged?"🔒":""} ${P.houses?(P.houses===5?"🏨":"🏠"+P.houses):""}</div>
+      <div class="pa">
+        ${s.t==="street"?`<button ${build_?"":"disabled"} onclick="build(${i})">Construire (${s.h}€)</button>
+        <button ${sell_?"":"disabled"} onclick="sell(${i})">Revendre (+${Math.floor(s.h/2)}€)</button>`:""}
+        <button ${mort_?"":"disabled"} onclick="mortgage(${i})">Hypothéquer (+${Math.floor(s.p/2)}€)</button>
+        <button ${unm_?"":"disabled"} onclick="unmort(${i})">Lever (−${Math.ceil(s.p*0.55)}€)</button>
+      </div></div>`;});
+  openModal(`<h3>💼 Mes biens</h3>${body}<div class="modal-row"><button class="ok" onclick="closeModal()">Fermer</button></div>`);
+}
+window.build=build;window.sell=sell;window.mortgage=mortgage;window.unmort=unmort;window.closeModal=closeModal;
+
+/* ---------- écrans / modales ---------- */
+function showCard(card,cb){openModal(`<h3>🎴 ${card.a==="jail"||card.x.includes("prison")?"":""}Carte</h3><p style="font-size:15px;color:#2a3a30;line-height:1.5">${escapeHtml(card.x)}</p>
+  <div class="modal-row"><button class="ok" id="cardOk">OK</button></div>`);
+  $("#cardOk").addEventListener("click",()=>{closeModal();cb();});}
+function openModal(h){$("#modalBox").innerHTML=h;$("#modalBg").classList.add("show");}
+function closeModal(){$("#modalBg").classList.remove("show");}
+$("#modalBg").addEventListener("click",e=>{if(e.target===$("#modalBg"))closeModal();});
+let seats=["",""];
+function renderSeats(){const l=$("#seatList");l.innerHTML="";seats.forEach((nm,i)=>{const row=document.createElement("div");row.className="prow";
+  row.innerHTML=`<div class="num" style="background:${TOKENS[i%TOKENS.length]}">${i+1}</div><input value="${escapeHtml(nm)}" placeholder="Joueur ${i+1}" maxlength="12">${seats.length>2?'<button class="rm">×</button>':''}`;
+  row.querySelector("input").addEventListener("input",e=>{seats[i]=e.target.value;chk();});
+  const rm=row.querySelector(".rm");if(rm)rm.addEventListener("click",()=>{seats.splice(i,1);renderSeats();chk();});
+  l.appendChild(row);});chk();}
+function chk(){$("#startBtn").disabled=seats.filter(s=>s.trim()).length<2;}
+function goHome(){$("#header").classList.remove("in-game");["setupScreen","gameScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#homeScreen").classList.add("active");$("#vtagHome").textContent="Ameya Games · Les Rues v"+APP_VERSION;}
+function goSetup(){seats=["",""];renderSeats();$("#homeScreen").classList.remove("active");$("#setupScreen").classList.add("active");}
+function goGame(){["homeScreen","setupScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#gameScreen").classList.add("active");$("#header").classList.add("in-game");if(isMultiplayer()&&!myId())chooseSeat();render();}
+function chooseSeat(){const btns=state.players.map(p=>`<button class="seat" data-id="${p.id}" style="background:${p.color}">${escapeHtml(p.name)}</button>`).join("");
+  openModal(`<h3>Qui es-tu ?</h3><p>Choisis ton pion sur cet appareil.</p>${btns}<div class="modal-row"><button class="cancel" onclick="closeModal()">Plus tard</button></div>`);
+  $("#modalBox").querySelectorAll(".seat").forEach(b=>b.addEventListener("click",()=>{store.set("rues_me",b.dataset.id);closeModal();render();}));}
+function showMenu(){openModal(`<h3>Menu — Les Rues</h3>
+  ${isMultiplayer()?`<button class="mbtn" id="mSeat">👤 Qui suis-je</button><button class="mbtn" id="mCode">🔗 Code de la partie</button>`:""}
+  <button class="mbtn" id="mNew">🔄 Nouvelle partie</button>
+  <button class="mbtn red" id="mLeave">🚪 Quitter</button>
+  <div class="modal-row"><button class="cancel" onclick="closeModal()">Fermer</button></div>`);
+  const s=$("#mSeat");if(s)s.addEventListener("click",()=>{closeModal();chooseSeat();});
+  const c=$("#mCode");if(c)c.addEventListener("click",()=>{closeModal();showCode();});
+  $("#mNew").addEventListener("click",()=>{closeModal();const nm=state.players.map(p=>p.name);const room=state.room;const players=state.players;state=newGame(nm);state.players=players;state.order=shuffle(players.map(p=>p.id));state.money={};state.pos={};state.jail={};state.getout={};players.forEach(p=>{state.money[p.id]=1500;state.pos[p.id]=0;state.jail[p.id]=0;state.getout[p.id]=0;});state.room=room;save();render();});
+  $("#mLeave").addEventListener("click",()=>{closeModal();leaveRoom();state=null;store.set("rues_state","");goHome();});}
+function showCode(){openModal(`<h3>Partie en ligne</h3><p>Code : <b style="font-size:24px;letter-spacing:.2em">${state.room||"—"}</b><br>Les autres ouvrent Les Rues → Rejoindre → tapent ce code → choisissent leur pion.</p><div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);}
+function showJoin(){openModal(`<h3>Rejoindre</h3><p>Saisis le code.</p><input class="code-in" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters">
+  <div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="doJoin">Rejoindre</button></div><p id="joinErr" class="warn" style="display:none"></p>${SYNC_ENABLED?"":'<div class="warn">Synchro non configurée.</div>'}`);
+  $("#doJoin").addEventListener("click",()=>doJoin($("#joinCode").value.trim().toUpperCase()));}
+async function doJoin(code){if(code.length<3)return;if(!SYNC_ENABLED){toast("Synchro non configurée");return;}
+  const btn=$("#doJoin"),err=$("#joinErr");if(err)err.style.display="none";if(btn){btn.disabled=true;btn.textContent="Connexion…";}
+  const prev=state;state={room:code,updated:0,players:[],order:[],turn:0,money:{},pos:{},jail:{},getout:{},props:{},bankrupt:{},dice:[1,1],lastRoll:0,doubles:0,pending:null,chance:[],caisse:[],phase:"roll",winner:null,log:[]};
+  const remote=await connectRoom({waitForFirst:true});
+  if(!remote||!remote.players||remote.players.length<2){leaveRoom();state=prev;store.set("rues_state",state?JSON.stringify(state):"");
+    if(err){err.textContent="Aucune partie trouvée avec ce code.";err.style.display="block";}if(btn){btn.disabled=false;btn.textContent="Rejoindre";}return;}
+  closeModal();goGame();}
+function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
+
+/* ---------- Firebase ---------- */
+let db=null,roomRef=null,roomUnsub=null;
+function applyRemote(v){const ns=normalize(v);if(!ns)return false;remoteApplying=true;state=ns;remoteApplying=false;
+  store.set("rues_state",JSON.stringify(state));if($("#gameScreen").classList.contains("active"))render();updateStatus();return true;}
+async function connectRoom(opts){opts=opts||{};updateStatus();if(!SYNC_ENABLED||!state.room||!navigator.onLine)return opts.waitForFirst?null:undefined;
+  try{if(!db){const app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");const rt=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+      const a=app.initializeApp(FIREBASE_CONFIG);db={rt,ref:rt.ref,onValue:rt.onValue,set:rt.set,inst:rt.getDatabase(a)};}
+    if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=db.ref(db.inst,"lesrues/"+state.room);let first=null;
+    if(opts.waitForFirst){first=new Promise(res=>{let done=false;const timer=setTimeout(()=>{if(!done){done=true;res(null);}},7000);
+      roomUnsub=db.onValue(roomRef,snap=>{const ok=applyRemote(snap.val());if(!done){done=true;clearTimeout(timer);res(ok?state:null);}},()=>{if(!done){done=true;clearTimeout(timer);res(null);}});});}
+    else{roomUnsub=db.onValue(roomRef,snap=>applyRemote(snap.val()));}
+    updateStatus("sync");setTimeout(updateStatus,800);if(first)return await first;
+  }catch(e){console.warn("sync ko",e);if(opts.waitForFirst)return null;}}
+function pushRemote(){if(roomRef&&db&&navigator.onLine){updateStatus("sync");db.set(roomRef,state).then(()=>updateStatus()).catch(()=>updateStatus());}}
+function leaveRoom(){if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=null;}
+function updateStatus(force){const dot=$("#statusDot"),txt=$("#statusText");dot.className="dot";
+  if(force==="sync"){dot.classList.add("sync");txt.textContent="Sync…";return;}
+  if(state&&state.room){if(navigator.onLine){dot.classList.add("online");txt.textContent=state.room+" · en ligne";}else{dot.classList.add("offline");txt.textContent=state.room+" · hors-ligne";}}
+  else{if(navigator.onLine)txt.textContent="Local";else{dot.classList.add("offline");txt.textContent="Hors-ligne";}}}
+window.addEventListener("online",()=>{updateStatus();if(state&&state.room)connectRoom();pushRemote();});
+window.addEventListener("offline",updateStatus);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state&&state.room)connectRoom();});
+
+/* ---------- utils ---------- */
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+let toastT=null;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2000);}
+function lg(s){state.log.unshift(s);if(state.log.length>16)state.log.length=16;}
+
+/* ---------- events ---------- */
+$("#createBtn").addEventListener("click",goSetup);
+$("#joinBtn").addEventListener("click",showJoin);
+$("#backHome").addEventListener("click",goHome);
+$("#addSeat").addEventListener("click",()=>{if(seats.length>=6)return;seats.push("");renderSeats();});
+$("#startBtn").addEventListener("click",async ()=>{const names=seats.map(s=>s.trim()).filter(Boolean);if(names.length<2)return;
+  state=newGame(names);if(SYNC_ENABLED)state.room=randCode();save();goGame();if(state.room){await connectRoom();pushRemote();showCode();}});
+$("#menuBtn").addEventListener("click",showMenu);
+
+/* ---------- init ---------- */
+load();updateStatus();
+if(state&&Array.isArray(state.players)&&state.players.length>=2&&state.money){goGame();if(state.room)connectRoom();}
+else goHome();
+</script>
+</body>
+</html>
