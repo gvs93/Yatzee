@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#123c2a">
+<title>Ameya Games — Mots de code</title>
+<meta name="apple-mobile-web-app-title" content="Mots de code">
+<style>
+:root{
+  --felt:#1b5137; --felt-dark:#123c2a; --felt-line:#2a6b4a;
+  --ivory:#f4efe4; --ivory-2:#eae3d2; --ink:#16241d;
+  --brass:#cba14a; --brass-deep:#a67f2e;
+  --r:#c0392b; --r-soft:#f2d3ce; --b:#2f6f9f; --b-soft:#cfe0ee;
+  --neutral:#c9b992; --neutral-soft:#e7dcc2; --assassin:#20181a;
+  --shadow:rgba(9,26,18,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:radial-gradient(120% 80% at 50% -10%, #2a6b4a 0%, var(--felt) 42%, var(--felt-dark) 100%);
+  background-attachment:fixed;color:var(--ivory);-webkit-font-smoothing:antialiased;
+  padding:calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 20px);
+}
+.wrap{max-width:640px;margin:0 auto}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+
+/* header */
+header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back{font-size:13px;font-weight:700;color:#bcd6c6;text-decoration:none;white-space:nowrap}
+.htitle{flex:1;text-align:center;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:15px}
+.htitle .g{color:var(--brass)}
+.status{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#bcd6c6;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#7f8a83}
+.dot.online{background:#57c98a;box-shadow:0 0 8px #57c98a88}.dot.offline{background:#e0a23a}
+.dot.sync{background:#57c98a;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.menu-btn{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid var(--felt-line);color:var(--ivory);font-size:19px;display:none;align-items:center;justify-content:center}
+header.in-game .menu-btn{display:flex}
+
+.screen{display:none}.screen.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+
+/* home */
+.card{background:var(--ivory);color:var(--ink);border-radius:18px;padding:22px 18px;box-shadow:0 16px 36px var(--shadow),inset 0 1px 0 #fff;margin-top:14px}
+.card h2{margin:0 0 4px;font-size:16px}
+.card p{margin:0 0 16px;font-size:13.5px;color:#6c7a70;line-height:1.5}
+.primary{width:100%;padding:16px;border-radius:14px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007;font-weight:800;font-size:16px;letter-spacing:.03em;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.ghost{width:100%;margin-top:10px;padding:14px;border-radius:12px;border:1.5px solid #d6cdb8;color:#6c7a70;font-weight:700;background:#fbf8f1}
+.code-in{width:100%;padding:14px;border-radius:12px;border:1.5px solid var(--ivory-2);font-size:20px;text-align:center;letter-spacing:.3em;text-transform:uppercase;font-weight:800;color:var(--ink)}
+
+/* scoreboard */
+.scoreboard{display:flex;align-items:stretch;gap:8px;margin-bottom:10px}
+.score{flex:1;border-radius:12px;padding:9px 6px;text-align:center;font-weight:800;color:#fff}
+.score.r{background:linear-gradient(180deg,#d0483a,var(--r))}
+.score.b{background:linear-gradient(180deg,#3a82b4,var(--b))}
+.score .n{font-size:24px;line-height:1}
+.score .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.9}
+.score.turn{outline:3px solid var(--brass);outline-offset:1px}
+
+/* banner */
+.banner{background:#0f3323;border:1px solid var(--felt-line);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:14px;text-align:center;font-weight:600}
+.banner .clue{font-size:19px;font-weight:800;color:var(--brass);letter-spacing:.02em}
+.banner.win{background:linear-gradient(90deg,rgba(203,161,74,.25),#1b5137);border-color:var(--brass)}
+
+/* board */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cw{aspect-ratio:1/1.22;border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:2px;font-size:10.5px;font-weight:800;line-height:1.05;word-break:break-word;
+  background:linear-gradient(160deg,#fffdf6,#efe7d4);color:#26312b;border:1.5px solid #d8cdb2;
+  box-shadow:0 3px 6px rgba(0,0,0,.18);text-transform:uppercase;letter-spacing:.01em;transition:transform .1s}
+.cw.tap:active{transform:scale(.95)}
+/* spymaster hint (unrevealed) */
+.cw.key-r{background:linear-gradient(160deg,#fbe2dd,var(--r-soft));border-color:#d99;color:#7a241b}
+.cw.key-b{background:linear-gradient(160deg,#dcebf6,var(--b-soft));border-color:#9bf;color:#1e3f5c}
+.cw.key-n{background:linear-gradient(160deg,#efe7d0,var(--neutral-soft));border-color:#c9bd97}
+.cw.key-a{background:repeating-linear-gradient(45deg,#2a2320,#2a2320 6px,#332a26 6px,#332a26 12px);border-color:#000;color:#e8ded0}
+/* revealed */
+.cw.rev{color:#fff;border-color:transparent;box-shadow:inset 0 0 0 100px rgba(0,0,0,.04)}
+.cw.rev.r{background:var(--r)}.cw.rev.b{background:var(--b)}
+.cw.rev.n{background:var(--neutral);color:#4a4128}
+.cw.rev.a{background:var(--assassin);color:#e8ded0}
+.cw.rev .w{opacity:.55;text-decoration:line-through}
+.cw .agent{font-size:15px;display:block}
+
+/* controls */
+.controls{margin-top:12px}
+.clue-row{display:flex;gap:8px;margin-bottom:8px}
+.clue-row input{flex:1;padding:13px;border-radius:11px;border:1.5px solid var(--felt-line);background:#0f3323;color:var(--ivory);font-size:16px;font-weight:700}
+.nums{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;justify-content:center}
+.num{width:40px;height:40px;border-radius:10px;background:#0f3323;border:1.5px solid var(--felt-line);color:#d9ecdf;font-weight:800;font-size:16px}
+.num.on{background:var(--brass);color:#2a2007;border-color:var(--brass)}
+.act{width:100%;padding:15px;border-radius:13px;font-weight:800;font-size:16px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.act.stop{background:#0f3323;color:#e7d9b4;border:1.5px solid var(--felt-line);box-shadow:none;margin-top:8px}
+.wait-note{text-align:center;font-size:13px;color:#a9c6b6;padding:10px;font-weight:600}
+.me-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 4px;flex-wrap:wrap}
+.me-chip{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.07);border:1.5px solid var(--felt-line);color:var(--ivory);font-weight:700;font-size:13px}
+.log{margin-top:12px;font-size:12px;color:#a9c6b6;line-height:1.6;max-height:96px;overflow:auto}
+.log div{padding:1px 0}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:#06170fcc;z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--ivory);color:var(--ink);border-radius:18px;padding:22px;max-width:400px;width:100%;box-shadow:0 20px 60px #000a}
+.modal h3{margin:0 0 10px;font-size:18px}
+.modal p{font-size:13.5px;color:#5a6b60;margin:0 0 14px;line-height:1.5}
+.pick-row{display:flex;gap:10px;margin-bottom:10px}
+.pick{flex:1;padding:14px;border-radius:12px;border:2px solid var(--ivory-2);background:#fff;color:var(--ink);font-weight:800;font-size:15px}
+.pick.r.on{background:var(--r);color:#fff;border-color:var(--r)}
+.pick.b.on{background:var(--b);color:#fff;border-color:var(--b)}
+.pick.on{border-color:var(--felt);background:var(--felt);color:#fff}
+.modal-row{display:flex;gap:10px;margin-top:8px}
+.modal-row button{flex:1;padding:13px;border-radius:12px;font-weight:800;font-size:14px}
+.modal-row .cancel{background:#e8e1d0;color:#5a6b60}.modal-row .ok{background:var(--felt);color:#fff}
+.mbtn{display:block;width:100%;margin:7px 0;padding:14px;border-radius:12px;background:var(--felt);color:#fff;font-weight:800}
+.mbtn.red{background:#fff;color:var(--r);border:1px solid #e6c4bf}
+.warn{font-size:12px;color:#9a3d2f;background:#f7e9e4;padding:10px;border-radius:10px;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:200;background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);padding:11px 16px;border-radius:12px;font-size:13.5px;font-weight:600;max-width:86%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
+.vtag{text-align:center;color:#6f8a7c;font-size:10px;margin-top:16px;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header id="header">
+    <a class="back" href="./index.html">← Ameya</a>
+    <div class="htitle">Mots de <span class="g">code</span></div>
+    <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Local</span></div>
+    <button class="menu-btn" id="menuBtn">☰</button>
+  </header>
+
+  <!-- HOME -->
+  <section class="screen active" id="homeScreen">
+    <div class="card">
+      <h2>Mots de code</h2>
+      <p>Deux équipes s'affrontent. Chaque équipe a un <b>maître-espion</b> qui voit la clé secrète et donne des indices en un mot ; les <b>agents</b> devinent les mots de leur couleur. Attention à l'assassin&nbsp;! Chacun sur son téléphone.</p>
+      <button class="primary" id="createBtn">Nouvelle partie</button>
+      <button class="ghost" id="joinBtn">Rejoindre avec un code</button>
+    </div>
+    <div class="vtag" id="vtagHome"></div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen" id="gameScreen">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="banner" id="banner"></div>
+    <div class="board" id="board"></div>
+    <div class="controls" id="controls"></div>
+    <div class="me-bar" id="meBar"></div>
+    <div class="log" id="log"></div>
+    <div class="vtag" id="vtag"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+
+<script>
+"use strict";
+const APP_VERSION="1.0.0";
+
+/* ---------- stockage ---------- */
+const store=(()=>{let mem={},ok=false;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}
+  return{get(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
+  set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+
+/* ---------- Firebase (même projet que Yam's) ---------- */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyAnt2oiCjl8JLzUvBswUDHaBZ3GM53y9Ck",
+  authDomain:"ameyatzee.firebaseapp.com",
+  databaseURL:"https://ameyatzee-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"ameyatzee",storageBucket:"ameyatzee.firebasestorage.app",
+  messagingSenderId:"690846387677",appId:"1:690846387677:web:0200403f1af5b707ffba34"
+};
+const SYNC_ENABLED=!!FIREBASE_CONFIG.databaseURL;
+
+/* ---------- banque de mots (originale, FR) ---------- */
+const WORDS=("avion banane château dragon école fusée guitare hiver igloo jardin kangourou lune montagne "+
+"navire océan pirate requin soleil tigre volcan abeille ballon cactus désert éléphant forêt girafe horloge "+
+"île jungle koala lion miel nuage orange pomme reine serpent train univers vent wagon yaourt zèbre arbre "+
+"bateau cerise diamant épée feu glace hôpital insecte judo kiwi lampe masque neige ours pont quille robot "+
+"sirène tambour usine vampire xylophone zoo ancre brique canard dauphin écharpe fromage gâteau hérisson "+
+"iceberg jouet lézard marteau noix oreille plage quai rivière sable tortue vague abricot bijou corde drapeau "+
+"étoile flèche gant hibou ivoire loup moulin nid olive panda radis singe taxi vélo aigle bougie clown écureuil "+
+"fourmi grenouille harpe image journal lait momie orage papillon roue sel trésor valise boussole cheval "+
+"dinosaure escargot four gomme herbe iris jambon lac miroir nappe pain ruche savon tarte vitre ampoule "+
+"brosse clé dune filet givre hamac jeton loupe manteau nuit ombre radeau sorcier tuile carotte échelle "+
+"fantôme guêpe lanterne muraille phare ressort tunnel violon").split(/\s+/);
+
+/* ---------- état ---------- */
+let state=null, remoteApplying=false;
+const other=t=>t==="r"?"b":"r";
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function newBoard(){
+  const pool=shuffle([...WORDS]).slice(0,25);
+  const starter=Math.random()<.5?"r":"b";
+  const cols=[];
+  for(let i=0;i<9;i++)cols.push(starter);
+  for(let i=0;i<8;i++)cols.push(other(starter));
+  for(let i=0;i<7;i++)cols.push("n");
+  cols.push("a");
+  shuffle(cols);
+  return{room:null,updated:Date.now(),words:pool,colors:cols,revealed:Array(25).fill(false),
+    starter,turnTeam:starter,phase:"clue",clue:null,guessesLeft:0,winner:null,log:[]};
+}
+function normalize(s){
+  if(!s||typeof s!=="object")return null;
+  if(!Array.isArray(s.words)||s.words.length!==25)return null;
+  if(!Array.isArray(s.colors)||s.colors.length!==25)return null;
+  if(!Array.isArray(s.revealed)||s.revealed.length!==25)s.revealed=Array(25).fill(false);
+  s.revealed=s.revealed.map(x=>!!x);
+  if(!["clue","guess","over"].includes(s.phase))s.phase="clue";
+  if(s.turnTeam!=="r"&&s.turnTeam!=="b")s.turnTeam="r";
+  if(s.clue===undefined)s.clue=null;
+  if(typeof s.guessesLeft!=="number")s.guessesLeft=0;
+  if(s.winner!=="r"&&s.winner!=="b")s.winner=null;
+  if(!Array.isArray(s.log))s.log=[];
+  if(typeof s.updated!=="number")s.updated=0;
+  if(s.room===undefined)s.room=null;
+  return s;
+}
+function save(){state.updated=Date.now();store.set("cn_state",JSON.stringify(state));if(!remoteApplying)pushRemote();}
+function load(){const raw=store.get("cn_state");if(raw){try{state=normalize(JSON.parse(raw));}catch(e){state=null;}}}
+
+/* ---------- moi : équipe + rôle (par appareil) ---------- */
+function getMe(){try{return JSON.parse(store.get("cn_me"))||null;}catch(e){return null;}}
+function setMe(m){store.set("cn_me",JSON.stringify(m));}
+let localShowKey=false; // en local : révéler la clé (pour le maître-espion physique)
+
+function isMultiplayer(){return !!(state&&state.room);}
+function seesKey(){ if(!isMultiplayer())return localShowKey; const m=getMe(); return m&&m.role==="spy"; }
+function canGiveClue(){
+  if(state.phase!=="clue"||state.winner)return false;
+  if(!isMultiplayer())return true;
+  const m=getMe();return m&&m.role==="spy"&&m.team===state.turnTeam;
+}
+function canGuess(){
+  if(state.phase!=="guess"||state.winner)return false;
+  if(!isMultiplayer())return true;
+  const m=getMe();return m&&m.role==="op"&&m.team===state.turnTeam;
+}
+
+/* ---------- helpers score ---------- */
+function totals(){let r=0,b=0;state.colors.forEach(c=>{if(c==="r")r++;if(c==="b")b++;});return{r,b};}
+function found(){let r=0,b=0;state.colors.forEach((c,i)=>{if(state.revealed[i]){if(c==="r")r++;if(c==="b")b++;}});return{r,b};}
+function teamName(t){return t==="r"?"Rouge":"Bleu";}
+function colLabel(c){return c==="r"?"🔴 rouge":c==="b"?"🔵 bleu":c==="n"?"⚪ neutre":"💀 assassin";}
+function pushLog(s){state.log.unshift(s);if(state.log.length>12)state.log.length=12;}
+
+/* ---------- actions ---------- */
+let clueNum=1;
+function giveClue(){
+  if(!canGiveClue())return;
+  const w=($("#clueWord").value||"").trim();
+  if(!w){toast("Écris un indice en un mot");return;}
+  state.clue={word:w,number:clueNum};
+  state.guessesLeft=clueNum>=90?99:clueNum+1;
+  state.phase="guess";
+  pushLog(`🕵️ ${teamName(state.turnTeam)} : « ${w.toUpperCase()} » ${clueNum>=90?"∞":clueNum}`);
+  save();renderGame();
+}
+function endTurn(){state.turnTeam=other(state.turnTeam);state.phase="clue";state.clue=null;state.guessesLeft=0;}
+function checkWin(){
+  const f=found(),t=totals();
+  if(f.r>=t.r){state.winner="r";state.phase="over";return true;}
+  if(f.b>=t.b){state.winner="b";state.phase="over";return true;}
+  return false;
+}
+function guessCard(i){
+  if(!canGuess()||state.revealed[i]||state.phase!=="guess"||state.winner)return;
+  state.revealed[i]=true;
+  const col=state.colors[i], word=state.words[i];
+  if(col==="a"){
+    pushLog(`💀 ${teamName(state.turnTeam)} touche l'ASSASSIN (${word}) !`);
+    state.winner=other(state.turnTeam);state.phase="over";
+    save();renderGame();return;
+  }
+  pushLog(`${teamName(state.turnTeam)} ouvre « ${word} » → ${colLabel(col)}`);
+  if(checkWin()){save();renderGame();return;}
+  if(col===state.turnTeam){
+    state.guessesLeft--;
+    if(state.guessesLeft<=0){pushLog(`↪️ Fin du tour ${teamName(state.turnTeam)}`);endTurn();}
+  }else{
+    pushLog(`↪️ Raté — au tour de ${teamName(other(state.turnTeam))}`);
+    endTurn();
+  }
+  save();renderGame();
+}
+function stopGuessing(){if(!canGuess())return;pushLog(`✋ ${teamName(state.turnTeam)} s'arrête`);endTurn();save();renderGame();}
+function newGame(){const room=state.room;state=newBoard();state.room=room;save();renderGame();}
+
+/* ---------- rendu ---------- */
+const $=s=>document.querySelector(s);
+function renderGame(){
+  const f=found(),t=totals();
+  // scoreboard
+  const sb=$("#scoreboard");
+  sb.innerHTML=`
+    <div class="score r ${state.turnTeam==="r"&&!state.winner?"turn":""}"><div class="n">${t.r-f.r}</div><div class="l">Rouge restants</div></div>
+    <div class="score b ${state.turnTeam==="b"&&!state.winner?"turn":""}"><div class="n">${t.b-f.b}</div><div class="l">Bleu restants</div></div>`;
+  // banner
+  const bn=$("#banner");
+  if(state.winner){
+    bn.className="banner win";
+    bn.innerHTML=`🏆 <b>Équipe ${teamName(state.winner)}</b> gagne&nbsp;! <span style="opacity:.8">— appuie sur « Nouvelle partie » (menu ☰)</span>`;
+  }else if(state.phase==="clue"){
+    bn.className="banner";
+    bn.innerHTML=`Au maître-espion <b style="color:${state.turnTeam==="r"?"#e88":"#8bf"}">${teamName(state.turnTeam)}</b> de donner un indice…`;
+  }else{
+    bn.className="banner";
+    bn.innerHTML=`Indice : <span class="clue">${escapeHtml(state.clue?state.clue.word.toUpperCase():"?")}</span> · <b>${state.guessesLeft>=90?"∞":state.guessesLeft}</b> essai(s) — Agents <b style="color:${state.turnTeam==="r"?"#e88":"#8bf"}">${teamName(state.turnTeam)}</b>`;
+  }
+  // board
+  const key=seesKey();
+  const tappable=canGuess();
+  const bd=$("#board");bd.innerHTML="";
+  state.words.forEach((w,i)=>{
+    const col=state.colors[i], rev=state.revealed[i];
+    const el=document.createElement(tappable&&!rev?"button":"div");
+    let cls="cw";
+    if(rev){cls+=" rev "+col;}
+    else if(key){cls+=" key-"+col;}
+    if(tappable&&!rev){cls+=" tap";}
+    el.className=cls;
+    el.innerHTML=`<span class="w">${escapeHtml(w)}</span>`+((rev&&(col==="r"||col==="b"))?'<span class="agent">🕵️</span>':"");
+    if(tappable&&!rev)el.addEventListener("click",()=>guessCard(i));
+    bd.appendChild(el);
+  });
+  // controls
+  const ct=$("#controls");ct.innerHTML="";
+  if(state.winner){
+    ct.innerHTML=`<button class="act" id="ngBtn">🔄 Nouvelle partie</button>`;
+    $("#ngBtn").addEventListener("click",newGame);
+  }else if(canGiveClue()){
+    const nums=[1,2,3,4,5,6,7,8].map(n=>`<button class="num ${clueNum===n?"on":""}" data-n="${n}">${n}</button>`).join("")
+      +`<button class="num ${clueNum>=90?"on":""}" data-n="99">∞</button>`;
+    ct.innerHTML=`<div class="clue-row"><input id="clueWord" placeholder="Ton indice (un mot)" autocomplete="off" maxlength="24"></div>
+      <div class="nums">${nums}</div>
+      <button class="act" id="giveBtn">Donner l'indice</button>`;
+    ct.querySelectorAll(".num").forEach(b=>b.addEventListener("click",()=>{clueNum=+b.dataset.n;renderGame();}));
+    $("#giveBtn").addEventListener("click",giveClue);
+  }else if(canGuess()){
+    ct.innerHTML=`<div class="wait-note">👆 Touche les mots que tu penses être de ton équipe.</div>
+      <button class="act stop" id="stopBtn">Arrêter mon tour</button>`;
+    $("#stopBtn").addEventListener("click",stopGuessing);
+  }else{
+    // spectateur / pas mon tour
+    let who=state.phase==="clue"?`maître-espion ${teamName(state.turnTeam)}`:`agents ${teamName(state.turnTeam)}`;
+    ct.innerHTML=`<div class="wait-note">⏳ En attente du ${who}…${seesKey()?" (tu vois la clé)":""}</div>`;
+  }
+  // me bar
+  const mb=$("#meBar");
+  const m=getMe();
+  const meTxt=isMultiplayer()
+    ? (m?`${m.team==="r"?"🔴":"🔵"} ${teamName(m.team)} · ${m.role==="spy"?"Maître-espion":"Agent"}`:"Choisir mon équipe/rôle")
+    : (localShowKey?"🔑 Clé visible (maître-espion)":"🔒 Clé masquée");
+  mb.innerHTML=`<button class="me-chip" id="meBtn">${isMultiplayer()?"👤 "+meTxt:meTxt}</button>`;
+  $("#meBtn").addEventListener("click",isMultiplayer()?chooseTeamRole:()=>{localShowKey=!localShowKey;renderGame();});
+  // log
+  $("#log").innerHTML=state.log.map(l=>`<div>${escapeHtml(l)}</div>`).join("");
+  $("#vtag").textContent="Mots de code · v"+APP_VERSION;
+}
+
+/* ---------- écrans ---------- */
+function goGame(){
+  $("#homeScreen").classList.remove("active");
+  $("#gameScreen").classList.add("active");
+  $("#header").classList.add("in-game");
+  if(isMultiplayer() && !getMe()) chooseTeamRole();
+  renderGame();
+}
+function goHome(){
+  $("#header").classList.remove("in-game");
+  $("#gameScreen").classList.remove("active");
+  $("#homeScreen").classList.add("active");
+  $("#vtagHome").textContent="Ameya Games · Mots de code v"+APP_VERSION;
+}
+
+/* ---------- modales ---------- */
+function openModal(h){$("#modalBox").innerHTML=h;$("#modalBg").classList.add("show");}
+function closeModal(){$("#modalBg").classList.remove("show");}
+$("#modalBg").addEventListener("click",e=>{if(e.target===$("#modalBg"))closeModal();});
+
+function chooseTeamRole(){
+  const m=getMe()||{team:"r",role:"op"};
+  let team=m.team, role=m.role;
+  openModal(`<h3>Ton équipe & ton rôle</h3>
+    <p>Sur ce téléphone. Le maître-espion voit la clé et donne les indices ; les agents devinent.</p>
+    <div class="pick-row">
+      <button class="pick r ${team==="r"?"on":""}" data-team="r">🔴 Rouge</button>
+      <button class="pick b ${team==="b"?"on":""}" data-team="b">🔵 Bleu</button>
+    </div>
+    <div class="pick-row">
+      <button class="pick ${role==="spy"?"on":""}" data-role="spy">🕵️ Maître-espion</button>
+      <button class="pick ${role==="op"?"on":""}" data-role="op">🎯 Agent</button>
+    </div>
+    <div class="modal-row"><button class="ok" id="saveMe">Valider</button></div>`);
+  $("#modalBox").querySelectorAll("[data-team]").forEach(b=>b.addEventListener("click",()=>{
+    team=b.dataset.team;$("#modalBox").querySelectorAll("[data-team]").forEach(x=>x.classList.toggle("on",x.dataset.team===team));}));
+  $("#modalBox").querySelectorAll("[data-role]").forEach(b=>b.addEventListener("click",()=>{
+    role=b.dataset.role;$("#modalBox").querySelectorAll("[data-role]").forEach(x=>x.classList.toggle("on",x.dataset.role===role));}));
+  $("#saveMe").addEventListener("click",()=>{setMe({team,role});closeModal();renderGame();});
+}
+
+function showMenu(){
+  openModal(`<h3>Menu</h3>
+    <button class="mbtn" id="mNew">🔄 Nouvelle partie (nouvelle grille)</button>
+    ${isMultiplayer()?`<button class="mbtn" id="mRole">👤 Changer équipe / rôle</button>
+      <button class="mbtn" id="mShare">🔗 Code de la partie</button>`
+      :`<button class="mbtn" id="mKey">🔑 ${localShowKey?"Masquer":"Voir"} la clé (maître-espion)</button>`}
+    <button class="mbtn red" id="mLeave">🚪 Quitter</button>
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Fermer</button></div>`);
+  $("#mNew").addEventListener("click",()=>{closeModal();openModal(`<h3>Nouvelle grille&nbsp;?</h3><p>Une nouvelle partie démarre pour tout le monde (nouveaux mots).</p><div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="cNew">Nouvelle grille</button></div>`);$("#cNew").addEventListener("click",()=>{newGame();closeModal();});});
+  const r=$("#mRole");if(r)r.addEventListener("click",()=>{closeModal();chooseTeamRole();});
+  const s=$("#mShare");if(s)s.addEventListener("click",()=>{closeModal();showShareCode();});
+  const k=$("#mKey");if(k)k.addEventListener("click",()=>{localShowKey=!localShowKey;closeModal();renderGame();});
+  $("#mLeave").addEventListener("click",()=>{closeModal();confirmLeave();});
+}
+function showShareCode(){
+  openModal(`<h3>Partie en ligne</h3>
+    <p>Code&nbsp;: <b style="font-size:24px;letter-spacing:.2em">${state.room||"—"}</b><br>
+    Les autres ouvrent Mots de code → <b>Rejoindre</b> → tapent ce code, puis choisissent leur équipe et leur rôle.</p>
+    <div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);
+}
+function confirmLeave(){
+  openModal(`<h3>Quitter&nbsp;?</h3><p>Tu reviens à l'accueil. ${isMultiplayer()?"Les autres continuent ; tu peux revenir avec le code.":""}</p>
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="doLeave" style="background:var(--r)">Quitter</button></div>`);
+  $("#doLeave").addEventListener("click",()=>{leaveRoom();state=null;store.set("cn_state","");closeModal();goHome();});
+}
+function showJoin(){
+  openModal(`<h3>Rejoindre</h3><p>Saisis le code de la partie.</p>
+    <input class="code-in" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters">
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="doJoin">Rejoindre</button></div>
+    <p id="joinErr" class="warn" style="display:none"></p>
+    ${SYNC_ENABLED?"":`<div class="warn">Synchro non configurée.</div>`}`);
+  $("#doJoin").addEventListener("click",()=>doJoin($("#joinCode").value.trim().toUpperCase()));
+}
+async function doJoin(code){
+  if(code.length<3)return;
+  if(!SYNC_ENABLED){toast("Synchro non configurée");return;}
+  const btn=$("#doJoin"),err=$("#joinErr");
+  if(err)err.style.display="none";if(btn){btn.disabled=true;btn.textContent="Connexion…";}
+  const prev=state;
+  state={room:code,updated:0,words:[],colors:[],revealed:[],phase:"clue",turnTeam:"r",clue:null,guessesLeft:0,winner:null,log:[]};
+  const remote=await connectRoom({waitForFirst:true});
+  if(!remote){leaveRoom();state=prev;store.set("cn_state",state?JSON.stringify(state):"");
+    if(err){err.textContent="Aucune partie trouvée avec ce code.";err.style.display="block";}
+    if(btn){btn.disabled=false;btn.textContent="Rejoindre";}return;}
+  closeModal();goGame();
+}
+function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
+
+/* ---------- Firebase ---------- */
+let db=null,roomRef=null,roomUnsub=null;
+function applyRemote(v){
+  const ns=normalize(v);if(!ns)return false;
+  remoteApplying=true;state=ns;remoteApplying=false;
+  store.set("cn_state",JSON.stringify(state));
+  if($("#gameScreen").classList.contains("active"))renderGame();
+  updateStatus();return true;
+}
+async function connectRoom(opts){
+  opts=opts||{};updateStatus();
+  if(!SYNC_ENABLED||!state.room||!navigator.onLine)return opts.waitForFirst?null:undefined;
+  try{
+    if(!db){
+      const app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+      const rt=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+      const a=app.initializeApp(FIREBASE_CONFIG);
+      db={rt,ref:rt.ref,onValue:rt.onValue,set:rt.set,inst:rt.getDatabase(a)};
+    }
+    if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}
+    roomRef=db.ref(db.inst,"codenames/"+state.room);
+    let first=null;
+    if(opts.waitForFirst){
+      first=new Promise(res=>{let done=false;const timer=setTimeout(()=>{if(!done){done=true;res(null);}},7000);
+        roomUnsub=db.onValue(roomRef,snap=>{const ok=applyRemote(snap.val());if(!done){done=true;clearTimeout(timer);res(ok?state:null);}},
+          ()=>{if(!done){done=true;clearTimeout(timer);res(null);}});});
+    }else{roomUnsub=db.onValue(roomRef,snap=>applyRemote(snap.val()));}
+    updateStatus("sync");setTimeout(updateStatus,800);
+    if(first)return await first;
+  }catch(e){console.warn("Sync KO",e);if(opts.waitForFirst)return null;}
+}
+function pushRemote(){if(roomRef&&db&&navigator.onLine){updateStatus("sync");db.set(roomRef,state).then(()=>updateStatus()).catch(()=>updateStatus());}}
+function leaveRoom(){if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=null;}
+
+/* ---------- statut ---------- */
+function updateStatus(force){
+  const dot=$("#statusDot"),txt=$("#statusText");dot.className="dot";
+  if(force==="sync"){dot.classList.add("sync");txt.textContent="Sync…";return;}
+  if(state&&state.room){if(navigator.onLine){dot.classList.add("online");txt.textContent=state.room+" · en ligne";}
+    else{dot.classList.add("offline");txt.textContent=state.room+" · hors-ligne";}}
+  else{if(navigator.onLine)txt.textContent="Local";else{dot.classList.add("offline");txt.textContent="Hors-ligne";}}
+}
+window.addEventListener("online",()=>{updateStatus();if(state&&state.room)connectRoom();pushRemote();});
+window.addEventListener("offline",updateStatus);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state&&state.room)connectRoom();});
+
+/* ---------- utils ---------- */
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+let toastT=null;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2000);}
+
+/* ---------- events ---------- */
+$("#createBtn").addEventListener("click",async ()=>{
+  state=newBoard();
+  if(SYNC_ENABLED){state.room=randCode();}
+  save();
+  goGame();
+  if(state.room){await connectRoom();pushRemote();showShareCode();}
+});
+$("#joinBtn").addEventListener("click",showJoin);
+$("#menuBtn").addEventListener("click",showMenu);
+
+/* ---------- init ---------- */
+load();
+updateStatus();
+if(state&&Array.isArray(state.words)&&state.words.length===25){
+  goGame();
+  if(state.room)connectRoom();
+}else{
+  goHome();
+}
+</script>
+</body>
+</html>
