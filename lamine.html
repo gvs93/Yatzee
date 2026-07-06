@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#123c2a">
+<title>Ameya Games — La Mine</title>
+<meta name="apple-mobile-web-app-title" content="La Mine">
+<style>
+:root{
+  --felt:#1b5137;--felt-dark:#123c2a;--felt-line:#2a6b4a;
+  --ivory:#f4efe4;--ivory-2:#eae3d2;--ink:#16241d;
+  --brass:#cba14a;--brass-deep:#a67f2e;--red:#b53d2c;
+  --dirt:#5a4632;--tunnel:#111;--shadow:rgba(9,26,18,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:radial-gradient(120% 80% at 50% -10%,#2a6b4a 0%,var(--felt) 42%,var(--felt-dark) 100%);
+  background-attachment:fixed;color:var(--ivory);-webkit-font-smoothing:antialiased;
+  padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 16px)}
+.wrap{max-width:680px;margin:0 auto}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.back{font-size:13px;font-weight:700;color:#bcd6c6;text-decoration:none}
+.htitle{flex:1;text-align:center;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:15px}
+.htitle .g{color:var(--brass)}
+.status{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;color:#bcd6c6;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#7f8a83}
+.dot.online{background:#57c98a}.dot.offline{background:#e0a23a}.dot.sync{background:#57c98a;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.menu-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid var(--felt-line);color:var(--ivory);font-size:18px;display:none;align-items:center;justify-content:center}
+header.in-game .menu-btn{display:flex}
+.screen{display:none}.screen.active{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.card{background:var(--ivory);color:var(--ink);border-radius:18px;padding:20px 16px;box-shadow:0 16px 36px var(--shadow),inset 0 1px 0 #fff;margin-top:12px}
+.card h2{margin:0 0 4px;font-size:16px}.card p{margin:0 0 14px;font-size:13px;color:#6c7a70;line-height:1.5}
+.primary{width:100%;padding:15px;border-radius:13px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.ghost{width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1.5px solid #d6cdb8;color:#6c7a70;font-weight:700;background:#fbf8f1}
+.prow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prow .num{width:26px;height:26px;border-radius:50%;background:var(--felt);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto}
+.prow input{flex:1;padding:11px 12px;border-radius:11px;border:1.5px solid var(--ivory-2);font-size:16px;color:var(--ink)}
+.prow .rm{width:34px;height:34px;border-radius:10px;background:#f0eadd;color:#9a3d2f;font-size:18px;font-weight:800}
+.add-btn{width:100%;margin-top:4px;padding:11px;border-radius:11px;border:1.5px dashed #c9bda0;color:#6c7a70;font-weight:700;background:#faf7ef}
+.code-in{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--ivory-2);font-size:20px;text-align:center;letter-spacing:.3em;text-transform:uppercase;font-weight:800;color:var(--ink)}
+
+/* role + turn banners */
+.rolebar{border-radius:12px;padding:10px 14px;margin-bottom:8px;font-weight:800;text-align:center;font-size:15px}
+.rolebar.dig{background:linear-gradient(90deg,rgba(203,161,74,.3),#1b5137);border:1px solid var(--brass)}
+.rolebar.sab{background:linear-gradient(90deg,rgba(181,61,44,.35),#1b5137);border:1px solid var(--red)}
+.turnbar{background:#0f3323;border:1px solid var(--felt-line);border-radius:12px;padding:9px 12px;margin-bottom:8px;text-align:center;font-weight:700;font-size:14px}
+.turnbar.mine{background:linear-gradient(90deg,rgba(203,161,74,.25),#1b5137);border-color:var(--brass)}
+.turnbar.win{background:linear-gradient(90deg,rgba(203,161,74,.3),#1b5137);border-color:var(--brass);font-size:15px}
+
+/* players strip */
+.pstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
+.pl{flex:0 0 auto;background:#0e3020;border:1.5px solid var(--felt-line);border-radius:11px;padding:7px 9px;min-width:78px;text-align:center}
+.pl.turn{border-color:var(--brass);background:#14472f}
+.pl.target{outline:2px dashed var(--brass);cursor:pointer}
+.pl .nm{font-size:12px;font-weight:800;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.pl .tools{display:flex;gap:3px;justify-content:center;margin-top:3px;font-size:13px}
+.pl .tools .broken{opacity:.3;position:relative}
+.pl .tools .broken::after{content:"✖";position:absolute;left:-1px;top:-2px;color:var(--red);font-size:12px}
+.pl .hc{font-size:10px;color:#9fc0ad;margin-top:2px}
+
+/* board */
+.boardwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 0}
+.board{display:grid;grid-template-columns:repeat(9,40px);grid-auto-rows:40px;gap:3px;margin:0 auto;width:max-content}
+.tile{width:40px;height:40px;border-radius:6px;background:#3a2c1e;position:relative;border:1px solid #2a2016}
+.tile.empty{background:#24402f;border:1px dashed #35604420}
+.tile.valid{background:#1c5a34;border:1.5px solid var(--brass);cursor:pointer}
+.tile.start{background:#1b5137;border-color:var(--brass)}
+.tile.goal{background:linear-gradient(160deg,#b8892f,#8a6420);border-color:#e7c15a;display:flex;align-items:center;justify-content:center;font-size:18px;color:#2a2007;font-weight:800}
+.tile.gold{background:linear-gradient(160deg,#f0c14b,#c99a2e);border-color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.tile.coal{background:#2a2724;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tile.pathcell.removable{cursor:pointer;outline:2px dashed var(--red)}
+/* tunnel arms */
+.arm{position:absolute;background:#0c0c0c}
+.arm.t{top:0;left:16px;width:8px;height:20px}
+.arm.b{bottom:0;left:16px;width:8px;height:20px}
+.arm.l{left:0;top:16px;height:8px;width:20px}
+.arm.r{right:0;top:16px;height:8px;width:20px}
+.hub{position:absolute;left:14px;top:14px;width:12px;height:12px;background:#0c0c0c;border-radius:2px}
+.tile.dead .arm,.tile.dead .hub{background:#7a3b2a}
+.tile.dead .hub{background:#b53d2c;border-radius:50%}
+.tile.start .arm,.tile.start .hub{background:#0c3a24}
+
+/* hand + controls */
+.section-t{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9fc0ad;font-weight:800;margin:10px 2px 4px}
+.hand{display:flex;gap:7px;overflow-x:auto;padding:4px 0 8px}
+.hcard{flex:0 0 auto;width:56px;height:72px;border-radius:9px;background:var(--ivory);border:2px solid #d8cdb2;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+.hcard.sel{border-color:var(--brass);box-shadow:0 0 0 3px rgba(203,161,74,.4);transform:translateY(-4px)}
+.hcard .mini{width:38px;height:38px;position:relative}
+.hcard .mini .marm{position:absolute;background:#111}
+.hcard .mini .marm.t{top:0;left:15px;width:8px;height:19px}
+.hcard .mini .marm.b{bottom:0;left:15px;width:8px;height:19px}
+.hcard .mini .marm.l{left:0;top:15px;height:8px;width:19px}
+.hcard .mini .marm.r{right:0;top:15px;height:8px;width:19px}
+.hcard .mini .mhub{position:absolute;left:13px;top:13px;width:12px;height:12px;background:#111;border-radius:2px}
+.hcard.dead .mini .marm,.hcard.dead .mini .mhub{background:#b53d2c}
+.hcard .lbl{font-size:22px}
+.hcard .cap{position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:8px;font-weight:800;color:#5a6b60;text-transform:uppercase}
+.hand-back{width:44px;height:60px;border-radius:8px;background:repeating-linear-gradient(45deg,#173f2b,#173f2b 5px,#1b5137 5px,#1b5137 10px);border:1.5px solid var(--felt-line);flex:0 0 auto}
+.actbar{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.act{flex:1;min-width:120px;padding:13px;border-radius:12px;font-weight:800;font-size:15px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007}
+.act.sec{background:#0f3323;color:#e7d9b4;border:1.5px solid var(--felt-line)}
+.act.rot{flex:0 0 auto;min-width:0;width:52px}
+.hint{text-align:center;font-size:12.5px;color:#a9c6b6;margin:6px 0;font-weight:600;min-height:16px}
+.log{margin-top:8px;font-size:11.5px;color:#9fc0ad;line-height:1.6;max-height:84px;overflow:auto}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:#06170fcc;z-index:60;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--ivory);color:var(--ink);border-radius:18px;padding:20px;max-width:400px;width:100%;box-shadow:0 20px 60px #000a;max-height:86vh;overflow:auto}
+.modal h3{margin:0 0 8px;font-size:18px}.modal p{font-size:13px;color:#5a6b60;margin:0 0 12px;line-height:1.5}
+.mbtn{display:block;width:100%;margin:7px 0;padding:13px;border-radius:12px;background:var(--felt);color:#fff;font-weight:800}
+.mbtn.red{background:#fff;color:var(--red);border:1px solid #e6c4bf}
+.modal-row{display:flex;gap:10px;margin-top:8px}
+.modal-row button{flex:1;padding:12px;border-radius:11px;font-weight:800}
+.modal-row .cancel{background:#e8e1d0;color:#5a6b60}.modal-row .ok{background:var(--felt);color:#fff}
+.seat{display:block;width:100%;margin:6px 0;padding:13px;border-radius:11px;background:#1b5137;color:#fff;font-weight:800}
+.warn{font-size:12px;color:#9a3d2f;background:#f7e9e4;padding:9px;border-radius:9px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:200;background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:600;max-width:86%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.vtag{text-align:center;color:#6f8a7c;font-size:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header id="header">
+    <a class="back" href="./index.html">← Ameya</a>
+    <div class="htitle">La <span class="g">Mine</span></div>
+    <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Local</span></div>
+    <button class="menu-btn" id="menuBtn">☰</button>
+  </header>
+
+  <section class="screen active" id="homeScreen">
+    <div class="card">
+      <h2>La Mine <span style="font-size:12px;color:#9aa89e;font-weight:600">— façon Saboteur</span></h2>
+      <p>Les <b>chercheurs d'or</b> creusent une galerie jusqu'au trésor. Mais parmi vous se cachent des <b>saboteurs</b> qui veulent tout faire échouer… sans se faire griller. Rôles secrets, outils qu'on casse, cartes qu'on pose. 3 à 10 joueurs, chacun sur son téléphone.</p>
+      <button class="primary" id="createBtn">Créer une partie</button>
+      <button class="ghost" id="joinBtn">Rejoindre avec un code</button>
+    </div>
+    <div class="vtag" id="vtagHome"></div>
+  </section>
+
+  <section class="screen" id="setupScreen">
+    <div class="card">
+      <h2>Les joueurs (3 à 10)</h2>
+      <p>Ajoute tout le monde. Les rôles seront distribués secrètement.</p>
+      <div id="seatList"></div>
+      <button class="add-btn" id="addSeat">+ Ajouter un joueur</button>
+      <button class="primary" id="dealBtn" style="margin-top:14px" disabled>Distribuer & commencer</button>
+      <button class="ghost" id="backHome">Retour</button>
+    </div>
+  </section>
+
+  <section class="screen" id="gameScreen">
+    <div class="rolebar" id="roleBar" style="display:none"></div>
+    <div class="turnbar" id="turnBar"></div>
+    <div class="pstrip" id="pstrip"></div>
+    <div class="boardwrap"><div class="board" id="board"></div></div>
+    <div class="hint" id="hint"></div>
+    <div class="section-t" id="handTitle">Ta main</div>
+    <div class="hand" id="hand"></div>
+    <div class="actbar" id="actbar"></div>
+    <div class="log" id="log"></div>
+    <div class="vtag" id="vtag"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+
+<script>
+"use strict";
+const APP_VERSION="1.0.0";
+
+/* ---------- stockage ---------- */
+const store=(()=>{let mem={},ok=false;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}
+  return{get(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},
+  set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+
+/* ---------- Firebase ---------- */
+const FIREBASE_CONFIG={apiKey:"AIzaSyAnt2oiCjl8JLzUvBswUDHaBZ3GM53y9Ck",authDomain:"ameyatzee.firebaseapp.com",
+  databaseURL:"https://ameyatzee-default-rtdb.europe-west1.firebasedatabase.app",projectId:"ameyatzee",
+  storageBucket:"ameyatzee.firebasestorage.app",messagingSenderId:"690846387677",appId:"1:690846387677:web:0200403f1af5b707ffba34"};
+const SYNC_ENABLED=!!FIREBASE_CONFIG.databaseURL;
+
+/* ---------- géométrie galeries ---------- */
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]]; // t,r,b,l
+const OPP=[2,3,0,1];
+const COLS=9,ROWS=5;
+const GOALS=[[8,0],[8,2],[8,4]];
+const K=(c,r)=>c+","+r;
+const inGrid=(c,r)=>c>=0&&c<COLS&&r>=0&&r<ROWS;
+const isGoalCell=(c,r)=>GOALS.some(g=>g[0]===c&&g[1]===r);
+const rot180=e=>[e[2],e[3],e[0],e[1]];
+const realCell=x=>x&&(x.k==="start"||x.k==="path"||x.k==="coal"||x.k==="gold");
+
+function reachable(board){
+  const R=new Set(),start=K(0,2);R.add(start);const q=[[0,2]];
+  while(q.length){const [c,r]=q.shift();const cell=board[K(c,r)];
+    if(cell.d&&cell.k!=="start")continue;
+    for(let d=0;d<4;d++){if(!cell.e[d])continue;
+      const nc=c+DIRS[d][0],nr=r+DIRS[d][1],nb=board[K(nc,nr)];
+      if(nb&&realCell(nb)&&nb.e[OPP[d]]&&!R.has(K(nc,nr))){R.add(K(nc,nr));q.push([nc,nr]);}}}
+  return R;
+}
+function canPlace(board,c,r,e){
+  if(!inGrid(c,r)||board[K(c,r)]||isGoalCell(c,r))return false;
+  const R=reachable(board);let connects=false;
+  for(let d=0;d<4;d++){const nc=c+DIRS[d][0],nr=r+DIRS[d][1],nb=board[K(nc,nr)];
+    if(!nb)continue;
+    if(nb.k==="goalDown")continue;
+    if(e[d]!==nb.e[OPP[d]])return false;
+    if(e[d]&&nb.e[OPP[d]]&&R.has(K(nc,nr)))connects=true;}
+  return connects;
+}
+function checkGoals(board){
+  const R=reachable(board);let gold=false;
+  GOALS.forEach(([gc,gr])=>{const g=board[K(gc,gr)];if(!g||g.k!=="goalDown")return;
+    for(let d=0;d<4;d++){const nc=gc+DIRS[d][0],nr=gr+DIRS[d][1],nb=board[K(nc,nr)];
+      if(nb&&R.has(K(nc,nr))&&nb.e[OPP[d]]&&realCell(nb)){g.k=g.gold?"gold":"coal";if(g.gold)gold=true;break;}}});
+  return gold;
+}
+
+/* ---------- deck ---------- */
+function P(e,d){return{t:"path",e,d:!!d};}
+function buildDeck(){
+  const d=[];const add=(n,f)=>{for(let i=0;i<n;i++)d.push(f());};
+  add(4,()=>P([1,1,1,1]));
+  add(5,()=>P([1,0,1,0])); add(5,()=>P([0,1,0,1]));
+  add(3,()=>P([1,1,0,0])); add(3,()=>P([1,0,0,1])); add(3,()=>P([0,1,1,0])); add(3,()=>P([0,0,1,1]));
+  add(3,()=>P([1,1,0,1])); add(3,()=>P([0,1,1,1])); add(3,()=>P([1,0,1,1])); add(3,()=>P([1,1,1,0]));
+  add(2,()=>P([1,0,1,0],1)); add(2,()=>P([0,1,0,1],1)); add(1,()=>P([1,1,0,0],1)); add(1,()=>P([0,0,1,1],1));
+  ["pick","lantern","cart"].forEach(t=>add(3,()=>({t:"break",tool:t})));
+  ["pick","lantern","cart"].forEach(t=>add(2,()=>({t:"repair",tool:t})));
+  add(6,()=>({t:"map"})); add(3,()=>({t:"rockfall"}));
+  return shuffle(d);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ---------- état ---------- */
+let state=null,remoteApplying=false;
+const SAB={3:1,4:1,5:2,6:2,7:3,8:3,9:3,10:4};
+function handSize(n){return n<=5?6:n<=7?5:4;}
+
+function dealGame(names){
+  const players=names.map(n=>({id:Math.random().toString(36).slice(2,8),name:n}));
+  const n=players.length, sab=SAB[n]||2, tot=n+1;
+  const roles=[]; for(let i=0;i<sab;i++)roles.push("saboteur"); for(let i=0;i<tot-sab;i++)roles.push("digger");
+  shuffle(roles);
+  const rmap={}; players.forEach((p,i)=>rmap[p.id]=roles[i]); // 1 rôle en trop non distribué
+  const deck=buildDeck(),hands={},tools={};
+  const hs=handSize(n);
+  players.forEach(p=>{hands[p.id]=deck.splice(0,hs);tools[p.id]={pick:true,lantern:true,cart:true};});
+  const board={};board[K(0,2)]={k:"start",e:[1,1,1,1],d:false};
+  const goldIdx=Math.floor(Math.random()*3);
+  GOALS.forEach(([c,r],i)=>board[K(c,r)]={k:"goalDown",gold:i===goldIdx,e:[1,1,1,1],d:false});
+  const order=shuffle(players.map(p=>p.id));
+  return{room:null,updated:Date.now(),players,order,turn:0,roles:rmap,hands,deck,board,tools,
+    phase:"play",winner:null,log:["🪙 La partie commence — creusez !"]};
+}
+function normalize(s){
+  if(!s||typeof s!=="object")return null;
+  if(!Array.isArray(s.players)||s.players.length<1)return null;
+  if(!Array.isArray(s.order))s.order=s.players.map(p=>p.id);
+  if(typeof s.turn!=="number")s.turn=0;
+  s.roles=s.roles||{}; s.tools=s.tools||{};
+  s.hands=s.hands||{}; s.players.forEach(p=>{if(!Array.isArray(s.hands[p.id]))s.hands[p.id]=[];if(!s.tools[p.id])s.tools[p.id]={pick:true,lantern:true,cart:true};});
+  if(!Array.isArray(s.deck))s.deck=[];
+  s.board=s.board||{};
+  if(!["play","over"].includes(s.phase))s.phase="play";
+  if(s.winner!=="diggers"&&s.winner!=="saboteurs")s.winner=null;
+  if(!Array.isArray(s.log))s.log=[];
+  if(typeof s.updated!=="number")s.updated=0;
+  if(s.room===undefined)s.room=null;
+  return s;
+}
+function save(){state.updated=Date.now();store.set("sab_state",JSON.stringify(state));if(!remoteApplying)pushRemote();}
+function load(){const raw=store.get("sab_state");if(raw){try{state=normalize(JSON.parse(raw));}catch(e){state=null;}}}
+
+/* ---------- identité ---------- */
+function myId(){const id=store.get("sab_me");return (state&&id&&state.players.some(p=>p.id===id))?id:null;}
+function isMultiplayer(){return !!(state&&state.room);}
+function curPid(){return state.order[state.turn];}
+function isMyTurn(){if(state.phase!=="play")return false;if(!isMultiplayer())return true;return myId()===curPid();}
+function pname(id){const p=state.players.find(x=>x.id===id);return p?p.name:"?";}
+function myRole(){const id=myId()||(isMultiplayer()?null:curPid());return id?state.roles[id]:null;}
+function toolsOk(id){const t=state.tools[id]||{};return t.pick&&t.lantern&&t.cart;}
+
+/* ---------- sélection locale ---------- */
+let sel=null; // {i, card, rot}
+function clearSel(){sel=null;}
+
+/* ---------- actions ---------- */
+function actorId(){return isMultiplayer()?myId():curPid();}
+function finishTurn(){
+  const pid=curPid();
+  if(state.deck.length)state.hands[pid].push(state.deck.shift());
+  state.turn=(state.turn+1)%state.order.length;
+  // fin : plus de cartes nulle part et pas d'or trouvé
+  const anyCards=state.deck.length>0||state.players.some(p=>state.hands[p.id].length>0);
+  if(!anyCards && state.phase==="play"){state.phase="over";state.winner="saboteurs";
+    state.log.unshift("⛔ Plus de cartes : les saboteurs l'emportent !");}
+  clearSel();save();render();
+}
+function playPath(c,r){
+  const pid=curPid();
+  if(!isMyTurn()||!sel||sel.card.t!=="path")return;
+  if(!toolsOk(pid)){toast("Un de tes outils est cassé — impossible de creuser");return;}
+  const e=sel.rot?rot180(sel.card.e):sel.card.e;
+  if(!canPlace(state.board,c,r,e)){toast("Placement impossible ici");return;}
+  state.board[K(c,r)]={k:"path",e:e.slice(),d:sel.card.d};
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`⛏️ ${pname(pid)} pose une galerie`);
+  if(checkGoals(state.board)){state.phase="over";state.winner="diggers";
+    state.log.unshift("💰 Le trésor est atteint — les chercheurs d'or gagnent !");save();render();return;}
+  finishTurn();
+}
+function playBreak(target){
+  const pid=curPid();if(!isMyTurn()||!sel||sel.card.t!=="break")return;
+  const tool=sel.card.tool;
+  if(!state.tools[target][tool]){toast("Cet outil est déjà cassé");return;}
+  state.tools[target][tool]=false;
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`🔨 ${pname(pid)} casse ${toolName(tool)} de ${pname(target)}`);
+  finishTurn();
+}
+function playRepair(target){
+  const pid=curPid();if(!isMyTurn()||!sel||sel.card.t!=="repair")return;
+  const tool=sel.card.tool;
+  if(state.tools[target][tool]){toast("Cet outil n'est pas cassé");return;}
+  state.tools[target][tool]=true;
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`🔧 ${pname(pid)} répare ${toolName(tool)} de ${pname(target)}`);
+  finishTurn();
+}
+function playMap(gi){
+  const pid=curPid();if(!isMyTurn()||!sel||sel.card.t!=="map")return;
+  const [c,r]=GOALS[gi];const g=state.board[K(c,r)];
+  const what=g.gold?"💰 le TRÉSOR":"🪨 du charbon (rien)";
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`🗺️ ${pname(pid)} consulte une carte au trésor…`);
+  openModal(`<h3>Carte au trésor</h3><p>L'objectif ${["du haut","du milieu","du bas"][gi]} contient :</p>
+    <div style="font-size:26px;text-align:center;margin:6px 0 14px">${what}</div>
+    <p style="font-size:12px">Toi seul(e) le sais. Garde-le pour toi… ou mens 😏</p>
+    <div class="modal-row"><button class="ok" id="mapOk">Compris</button></div>`);
+  $("#mapOk").addEventListener("click",()=>{closeModal();finishTurn();});
+}
+function playRockfall(c,r){
+  const pid=curPid();if(!isMyTurn()||!sel||sel.card.t!=="rockfall")return;
+  const cell=state.board[K(c,r)];
+  if(!cell||cell.k!=="path"){toast("Choisis une galerie à faire s'effondrer");return;}
+  delete state.board[K(c,r)];
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`💥 ${pname(pid)} provoque un éboulement`);
+  finishTurn();
+}
+function discardSel(){
+  const pid=curPid();if(!isMyTurn()||!sel)return;
+  state.hands[pid].splice(sel.i,1);
+  state.log.unshift(`🗑️ ${pname(pid)} défausse une carte`);
+  finishTurn();
+}
+function passTurn(){if(!isMyTurn())return;state.log.unshift(`⏭️ ${pname(curPid())} passe`);finishTurn();}
+function toolName(t){return t==="pick"?"la pioche ⛏️":t==="lantern"?"la lanterne 🏮":"le wagon 🛒";}
+
+/* ---------- rendu ---------- */
+const $=s=>document.querySelector(s);
+function armsHTML(e,dead){let h=dead?'<span class="hub"></span>':'<span class="hub"></span>';
+  ["t","r","b","l"].forEach((s,i)=>{if(e[i])h+=`<span class="arm ${s}"></span>`;});return h;}
+function miniHTML(card){
+  if(card.t==="path"){let h='<div class="mini">'+'<span class="mhub"></span>';
+    ["t","r","b","l"].forEach((s,i)=>{if(card.e[i])h+=`<span class="marm ${s}"></span>`;});return h+'</div>';}
+  const ic={break:"🔨",repair:"🔧",map:"🗺️",rockfall:"💥"}[card.t];
+  const cap={break:toolShort(card.tool),repair:toolShort(card.tool),map:"Carte",rockfall:"Éboul."}[card.t];
+  return `<span class="lbl">${ic}</span><span class="cap">${cap}</span>`;
+}
+function toolShort(t){return t==="pick"?"⛏️ casse":t==="lantern"?"🏮 casse":"🛒 casse";}
+
+function render(){
+  if(!state){return;}
+  // role bar
+  const rb=$("#roleBar");const role=myRole();
+  if(role){rb.style.display="block";rb.className="rolebar "+(role==="saboteur"?"sab":"dig");
+    rb.innerHTML=role==="saboteur"?"🕵️ Tu es un <b>SABOTEUR</b> — fais échouer la galerie, discrètement.":"⛏️ Tu es un <b>CHERCHEUR D'OR</b> — atteins le trésor.";}
+  else rb.style.display="none";
+  // turn bar
+  const tb=$("#turnBar");
+  if(state.phase==="over"){tb.className="turnbar win";
+    tb.innerHTML=state.winner==="diggers"?"💰 Les <b>chercheurs d'or</b> gagnent !":"🕵️ Les <b>saboteurs</b> gagnent !";}
+  else{const mine=isMyTurn();tb.className="turnbar"+(mine?" mine":"");
+    tb.innerHTML=mine?"🎯 <b>À toi de jouer</b>":`⏳ Au tour de <b>${pname(curPid())}</b>`;}
+  // players strip
+  const ps=$("#pstrip");ps.innerHTML="";
+  const targeting=sel&&(sel.card.t==="break"||sel.card.t==="repair")&&isMyTurn();
+  state.order.forEach(id=>{
+    const el=document.createElement(targeting?"button":"div");
+    el.className="pl"+(id===curPid()&&state.phase==="play"?" turn":"")+(targeting?" target":"");
+    const t=state.tools[id];
+    const tls=`<span class="${t.pick?"":"broken"}">⛏️</span><span class="${t.lantern?"":"broken"}">🏮</span><span class="${t.cart?"":"broken"}">🛒</span>`;
+    const roleTag=(state.phase==="over")?(state.roles[id]==="saboteur"?" 🕵️":" ⛏️"):"";
+    el.innerHTML=`<div class="nm">${escapeHtml(pname(id))}${roleTag}</div><div class="tools">${tls}</div><div class="hc">${state.hands[id].length} carte(s)</div>`;
+    if(targeting)el.addEventListener("click",()=>sel.card.t==="break"?playBreak(id):playRepair(id));
+    ps.appendChild(el);
+  });
+  // board
+  const R=reachable(state.board);
+  const placing=sel&&sel.card.t==="path"&&isMyTurn()&&toolsOk(curPid());
+  const rocking=sel&&sel.card.t==="rockfall"&&isMyTurn();
+  const mapping=sel&&sel.card.t==="map"&&isMyTurn();
+  const pe=placing?(sel.rot?rot180(sel.card.e):sel.card.e):null;
+  const bd=$("#board");bd.innerHTML="";
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const cell=state.board[K(c,r)];const el=document.createElement("div");
+    if(!cell){
+      let cls="tile empty";
+      if(placing&&canPlace(state.board,c,r,pe))cls="tile valid";
+      el.className=cls;
+      if(cls==="tile valid")el.addEventListener("click",()=>playPath(c,r));
+    }else if(cell.k==="start"){el.className="tile start";el.innerHTML=armsHTML(cell.e,false);}
+    else if(cell.k==="goalDown"){el.className="tile goal";el.textContent="?";
+      if(mapping)el.addEventListener("click",()=>{const gi=GOALS.findIndex(g=>g[0]===c&&g[1]===r);playMap(gi);});}
+    else if(cell.k==="gold"){el.className="tile gold";el.textContent="💰";}
+    else if(cell.k==="coal"){el.className="tile coal";el.textContent="🪨";}
+    else{el.className="tile pathcell"+(cell.d?" dead":"")+(rocking?" removable":"");el.innerHTML=armsHTML(cell.e,cell.d);
+      if(rocking)el.addEventListener("click",()=>playRockfall(c,r));}
+    bd.appendChild(el);
+  }
+  // hand
+  const me=actorId();
+  const hand=me?state.hands[me]||[]:[];
+  const ht=$("#handTitle");ht.textContent=isMultiplayer()&&!myId()?"Choisis d'abord qui tu es (menu ☰)":"Ta main";
+  const hd=$("#hand");hd.innerHTML="";
+  if(isMultiplayer()&&!myId()){hd.innerHTML='<div style="color:#9fc0ad;font-size:13px;padding:8px">—</div>';}
+  else hand.forEach((card,i)=>{
+    const el=document.createElement("button");
+    el.className="hcard"+(card.t==="path"&&card.d?" dead":"")+(sel&&sel.i===i?" sel":"");
+    el.innerHTML=miniHTML(card);
+    el.addEventListener("click",()=>{ if(!isMyTurn()){toast("Ce n'est pas ton tour");return;}
+      sel=(sel&&sel.i===i)?null:{i,card,rot:0}; render(); });
+    hd.appendChild(el);
+  });
+  // hint + actions
+  const hint=$("#hint");const ab=$("#actbar");ab.innerHTML="";
+  if(state.phase==="over"){
+    hint.textContent="Partie terminée.";
+    const b=document.createElement("button");b.className="act";b.textContent="🔄 Nouvelle partie (mêmes joueurs)";
+    b.addEventListener("click",newRound);ab.appendChild(b);
+  }else if(!isMyTurn()){
+    hint.textContent="En attente…";
+  }else if(!sel){
+    hint.textContent=hand.length?"Choisis une carte de ta main.":"Aucune carte — tu dois passer.";
+    if(!hand.length){const b=document.createElement("button");b.className="act";b.textContent="Passer";b.addEventListener("click",passTurn);ab.appendChild(b);}
+  }else{
+    const card=sel.card;
+    if(card.t==="path"){
+      hint.textContent=toolsOk(curPid())?"Touche une case surlignée pour poser la galerie.":"Outil cassé : tu ne peux pas poser de galerie (répare ou joue une autre carte).";
+      const rb2=document.createElement("button");rb2.className="act rot sec";rb2.textContent="⟳";
+      rb2.addEventListener("click",()=>{sel.rot=sel.rot?0:1;render();});ab.appendChild(rb2);
+    }else if(card.t==="break"){hint.textContent="Touche le joueur dont tu casses "+toolName(card.tool)+".";}
+    else if(card.t==="repair"){hint.textContent="Touche le joueur dont tu répares "+toolName(card.tool)+".";}
+    else if(card.t==="map"){hint.textContent="Touche un objectif (?) pour le regarder en secret.";}
+    else if(card.t==="rockfall"){hint.textContent="Touche une galerie à faire s'effondrer.";}
+    const dc=document.createElement("button");dc.className="act sec";dc.textContent="🗑️ Défausser cette carte";
+    dc.addEventListener("click",discardSel);ab.appendChild(dc);
+    const cx=document.createElement("button");cx.className="act sec";cx.textContent="Annuler";
+    cx.addEventListener("click",()=>{clearSel();render();});ab.appendChild(cx);
+  }
+  $("#log").innerHTML=state.log.map(l=>`<div>${escapeHtml(l)}</div>`).join("");
+  $("#vtag").textContent="La Mine · v"+APP_VERSION;
+}
+
+function newRound(){
+  const names=state.players.map(p=>p.name);const room=state.room;
+  const ns=dealGame(names);
+  // conserve les mêmes ids/joueurs pour que l'identité par appareil reste valable
+  ns.players=state.players.map(p=>({id:p.id,name:p.name}));
+  const n=ns.players.length,sab=SAB[n]||2,tot=n+1;
+  const roles=[];for(let i=0;i<sab;i++)roles.push("saboteur");for(let i=0;i<tot-sab;i++)roles.push("digger");shuffle(roles);
+  ns.roles={};ns.players.forEach((p,i)=>ns.roles[p.id]=roles[i]);
+  ns.hands={};ns.tools={};const deck=buildDeck();const hs=handSize(n);
+  ns.players.forEach(p=>{ns.hands[p.id]=deck.splice(0,hs);ns.tools[p.id]={pick:true,lantern:true,cart:true};});
+  ns.deck=deck;ns.order=shuffle(ns.players.map(p=>p.id));
+  ns.room=room;state=ns;clearSel();save();render();
+}
+
+/* ---------- écrans / setup ---------- */
+let seats=["",""," "].slice(0,3).map(()=>"");
+function goHome(){$("#header").classList.remove("in-game");["setupScreen","gameScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#homeScreen").classList.add("active");$("#vtagHome").textContent="Ameya Games · La Mine v"+APP_VERSION;}
+function goSetup(){seats=["","",""];renderSeats();$("#homeScreen").classList.remove("active");$("#setupScreen").classList.add("active");}
+function goGame(){["homeScreen","setupScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#gameScreen").classList.add("active");$("#header").classList.add("in-game");if(isMultiplayer()&&!myId())chooseSeat();render();}
+function renderSeats(){const l=$("#seatList");l.innerHTML="";seats.forEach((nm,i)=>{
+  const row=document.createElement("div");row.className="prow";
+  row.innerHTML=`<div class="num">${i+1}</div><input value="${escapeHtml(nm)}" placeholder="Joueur ${i+1}" maxlength="14">${seats.length>3?'<button class="rm">×</button>':''}`;
+  row.querySelector("input").addEventListener("input",e=>{seats[i]=e.target.value;chkDeal();});
+  const rm=row.querySelector(".rm");if(rm)rm.addEventListener("click",()=>{seats.splice(i,1);renderSeats();chkDeal();});
+  l.appendChild(row);});chkDeal();}
+function chkDeal(){const n=seats.filter(s=>s.trim()).length;$("#dealBtn").disabled=n<3;}
+
+/* ---------- modales ---------- */
+function openModal(h){$("#modalBox").innerHTML=h;$("#modalBg").classList.add("show");}
+function closeModal(){$("#modalBg").classList.remove("show");}
+$("#modalBg").addEventListener("click",e=>{if(e.target===$("#modalBg"))closeModal();});
+function chooseSeat(){
+  const btns=state.players.map(p=>`<button class="seat" data-id="${p.id}">${escapeHtml(p.name)}</button>`).join("");
+  openModal(`<h3>Qui es-tu ?</h3><p>Choisis ton nom sur cet appareil pour voir ton rôle et ta main (secrets).</p>${btns}
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Plus tard</button></div>`);
+  $("#modalBox").querySelectorAll(".seat").forEach(b=>b.addEventListener("click",()=>{store.set("sab_me",b.dataset.id);closeModal();render();}));
+}
+function showMenu(){
+  openModal(`<h3>Menu — La Mine</h3>
+    <button class="mbtn" id="mNew">🔄 Nouvelle manche</button>
+    ${isMultiplayer()?`<button class="mbtn" id="mSeat">👤 Qui suis-je</button><button class="mbtn" id="mCode">🔗 Code de la partie</button>`:""}
+    <button class="mbtn" id="mRules">📖 Règles rapides</button>
+    <button class="mbtn red" id="mLeave">🚪 Quitter</button>
+    <div class="modal-row"><button class="cancel" onclick="closeModal()">Fermer</button></div>`);
+  $("#mNew").addEventListener("click",()=>{closeModal();newRound();});
+  const s=$("#mSeat");if(s)s.addEventListener("click",()=>{closeModal();chooseSeat();});
+  const c=$("#mCode");if(c)c.addEventListener("click",()=>{closeModal();showCode();});
+  $("#mRules").addEventListener("click",showRules);
+  $("#mLeave").addEventListener("click",()=>{closeModal();leaveRoom();state=null;store.set("sab_state","");goHome();});
+}
+function showCode(){openModal(`<h3>Partie en ligne</h3><p>Code : <b style="font-size:24px;letter-spacing:.2em">${state.room||"—"}</b><br>Les autres ouvrent La Mine → Rejoindre → tapent ce code → choisissent leur nom.</p><div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);}
+function showRules(){openModal(`<h3>Règles rapides</h3>
+  <p style="line-height:1.6">• <b>But</b> : les chercheurs d'or relient le départ au 💰 ; les saboteurs les en empêchent sans se faire repérer.<br>
+  • À ton tour : joue <b>1 carte</b> puis pioche.<br>
+  • <b>Galerie</b> : pose une carte connectée au tunnel (tourne-la avec ⟳). Impossible si un de tes outils est cassé.<br>
+  • <b>🔨 Casser</b> / <b>🔧 Réparer</b> un outil (pioche/lanterne/wagon) d'un joueur.<br>
+  • <b>🗺️ Carte</b> : regarde un objectif en secret. <b>💥 Éboulement</b> : détruis une galerie.<br>
+  • Trésor atteint → chercheurs gagnent. Plus de cartes → saboteurs gagnent.</p>
+  <div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);}
+function showJoin(){openModal(`<h3>Rejoindre</h3><p>Saisis le code.</p>
+  <input class="code-in" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters">
+  <div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="doJoin">Rejoindre</button></div>
+  <p id="joinErr" class="warn" style="display:none"></p>${SYNC_ENABLED?"":'<div class="warn">Synchro non configurée.</div>'}`);
+  $("#doJoin").addEventListener("click",()=>doJoin($("#joinCode").value.trim().toUpperCase()));}
+async function doJoin(code){if(code.length<3)return;if(!SYNC_ENABLED){toast("Synchro non configurée");return;}
+  const btn=$("#doJoin"),err=$("#joinErr");if(err)err.style.display="none";if(btn){btn.disabled=true;btn.textContent="Connexion…";}
+  const prev=state;state={room:code,updated:0,players:[],order:[],turn:0,roles:{},hands:{},deck:[],board:{},tools:{},phase:"play",winner:null,log:[]};
+  const remote=await connectRoom({waitForFirst:true});
+  if(!remote||!remote.players||remote.players.length<1){leaveRoom();state=prev;store.set("sab_state",state?JSON.stringify(state):"");
+    if(err){err.textContent="Aucune partie trouvée avec ce code.";err.style.display="block";}if(btn){btn.disabled=false;btn.textContent="Rejoindre";}return;}
+  closeModal();goGame();}
+function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
+
+/* ---------- Firebase ---------- */
+let db=null,roomRef=null,roomUnsub=null;
+function applyRemote(v){const ns=normalize(v);if(!ns)return false;remoteApplying=true;state=ns;remoteApplying=false;
+  store.set("sab_state",JSON.stringify(state));if($("#gameScreen").classList.contains("active"))render();updateStatus();return true;}
+async function connectRoom(opts){opts=opts||{};updateStatus();
+  if(!SYNC_ENABLED||!state.room||!navigator.onLine)return opts.waitForFirst?null:undefined;
+  try{if(!db){const app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+      const rt=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+      const a=app.initializeApp(FIREBASE_CONFIG);db={rt,ref:rt.ref,onValue:rt.onValue,set:rt.set,inst:rt.getDatabase(a)};}
+    if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}
+    roomRef=db.ref(db.inst,"sabmine/"+state.room);let first=null;
+    if(opts.waitForFirst){first=new Promise(res=>{let done=false;const timer=setTimeout(()=>{if(!done){done=true;res(null);}},7000);
+      roomUnsub=db.onValue(roomRef,snap=>{const ok=applyRemote(snap.val());if(!done){done=true;clearTimeout(timer);res(ok?state:null);}},
+        ()=>{if(!done){done=true;clearTimeout(timer);res(null);}});});}
+    else{roomUnsub=db.onValue(roomRef,snap=>applyRemote(snap.val()));}
+    updateStatus("sync");setTimeout(updateStatus,800);if(first)return await first;
+  }catch(e){console.warn("sync ko",e);if(opts.waitForFirst)return null;}}
+function pushRemote(){if(roomRef&&db&&navigator.onLine){updateStatus("sync");db.set(roomRef,state).then(()=>updateStatus()).catch(()=>updateStatus());}}
+function leaveRoom(){if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=null;}
+
+function updateStatus(force){const dot=$("#statusDot"),txt=$("#statusText");dot.className="dot";
+  if(force==="sync"){dot.classList.add("sync");txt.textContent="Sync…";return;}
+  if(state&&state.room){if(navigator.onLine){dot.classList.add("online");txt.textContent=state.room+" · en ligne";}else{dot.classList.add("offline");txt.textContent=state.room+" · hors-ligne";}}
+  else{if(navigator.onLine)txt.textContent="Local";else{dot.classList.add("offline");txt.textContent="Hors-ligne";}}}
+window.addEventListener("online",()=>{updateStatus();if(state&&state.room)connectRoom();pushRemote();});
+window.addEventListener("offline",updateStatus);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state&&state.room)connectRoom();});
+
+/* ---------- utils ---------- */
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+let toastT=null;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2000);}
+
+/* ---------- events ---------- */
+$("#createBtn").addEventListener("click",goSetup);
+$("#joinBtn").addEventListener("click",showJoin);
+$("#backHome").addEventListener("click",goHome);
+$("#addSeat").addEventListener("click",()=>{if(seats.length>=10)return;seats.push("");renderSeats();});
+$("#dealBtn").addEventListener("click",async ()=>{
+  const names=seats.map(s=>s.trim()).filter(Boolean);if(names.length<3)return;
+  state=dealGame(names);
+  if(SYNC_ENABLED)state.room=randCode();
+  save();goGame();
+  if(state.room){await connectRoom();pushRemote();showCode();}
+});
+$("#menuBtn").addEventListener("click",showMenu);
+
+/* ---------- init ---------- */
+load();updateStatus();
+if(state&&Array.isArray(state.players)&&state.players.length>=3&&state.board&&state.board["0,2"]){goGame();if(state.room)connectRoom();}
+else goHome();
+</script>
+</body>
+</html>
