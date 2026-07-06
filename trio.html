@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#123c2a"><title>Ameya Games — Le Trio</title>
+<style>
+:root{--felt:#1b5137;--felt-dark:#123c2a;--felt-line:#2a6b4a;--ivory:#f4efe4;--ivory-2:#eae3d2;--ink:#16241d;--brass:#cba14a;--brass-deep:#a67f2e;--red:#b53d2c;--shadow:rgba(9,26,18,.45)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(120% 80% at 50% -10%,#2a6b4a,var(--felt) 42%,var(--felt-dark));background-attachment:fixed;color:var(--ivory);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 16px)}
+.wrap{max-width:560px;margin:0 auto}button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}input{font-family:inherit}
+header{display:flex;align-items:center;gap:10px;margin-bottom:8px}.back{font-size:13px;font-weight:700;color:#bcd6c6;text-decoration:none}
+.htitle{flex:1;text-align:center;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:15px}.htitle .g{color:var(--brass)}
+.status{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;color:#bcd6c6;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#7f8a83}.dot.online{background:#57c98a}.dot.offline{background:#e0a23a}.dot.sync{background:#57c98a;animation:pulse 1.4s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.menu-btn{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid var(--felt-line);color:var(--ivory);font-size:18px;display:none;align-items:center;justify-content:center}header.in-game .menu-btn{display:flex}
+.screen{display:none}.screen.active{display:block;animation:fade .3s}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.card{background:var(--ivory);color:var(--ink);border-radius:18px;padding:20px 16px;box-shadow:0 16px 36px var(--shadow),inset 0 1px 0 #fff;margin-top:12px}
+.card h2{margin:0 0 4px;font-size:16px}.card p{margin:0 0 14px;font-size:13px;color:#6c7a70;line-height:1.5}
+.primary{width:100%;padding:15px;border-radius:13px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007;font-weight:800;font-size:16px;box-shadow:0 8px 20px rgba(0,0,0,.28)}.primary:disabled{opacity:.5}
+.ghost{width:100%;margin-top:10px;padding:13px;border-radius:12px;border:1.5px solid #d6cdb8;color:#6c7a70;font-weight:700;background:#fbf8f1}
+.prow{display:flex;align-items:center;gap:8px;margin-bottom:8px}.prow .num{width:26px;height:26px;border-radius:50%;background:var(--felt);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:0 0 auto}
+.prow input{flex:1;padding:11px 12px;border-radius:11px;border:1.5px solid var(--ivory-2);font-size:16px;color:var(--ink)}.prow .rm{width:34px;height:34px;border-radius:10px;background:#f0eadd;color:#9a3d2f;font-size:18px;font-weight:800}
+.add-btn{width:100%;margin-top:4px;padding:11px;border-radius:11px;border:1.5px dashed #c9bda0;color:#6c7a70;font-weight:700;background:#faf7ef}
+.code-in{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--ivory-2);font-size:20px;text-align:center;letter-spacing:.3em;text-transform:uppercase;font-weight:800;color:var(--ink)}
+.turnbar{background:#0f3323;border:1px solid var(--felt-line);border-radius:11px;padding:8px 12px;margin-bottom:8px;text-align:center;font-weight:700;font-size:14px}.turnbar.mine{background:linear-gradient(90deg,rgba(203,161,74,.25),#1b5137);border-color:var(--brass)}.turnbar.win{border-color:var(--brass);font-size:15px}
+.pstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.pl{flex:0 0 auto;background:#0e3020;border:1.5px solid var(--felt-line);border-radius:10px;padding:6px 8px;min-width:96px;text-align:center}
+.pl.turn{border-color:var(--brass);background:#14472f}.pl .nm{font-size:12px;font-weight:800;white-space:nowrap;display:flex;gap:4px;align-items:center;justify-content:center}
+.pl .tk{width:10px;height:10px;border-radius:50%}.pl .tr{font-size:11px;color:#e7d9b4;margin-top:2px}.pl .ask{display:flex;gap:4px;margin-top:5px}
+.pl .ask button{flex:1;padding:5px 0;border-radius:7px;background:#1b5137;color:#fff;font-size:14px;font-weight:800;border:1px solid var(--felt-line)}
+.pl .ask button:disabled{opacity:.3}
+.section-t{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9fc0ad;font-weight:800;margin:8px 2px 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
+.tc{aspect-ratio:1/1.3;border-radius:8px;background:repeating-linear-gradient(45deg,#173f2b,#173f2b 5px,#1b5137 5px,#1b5137 10px);border:1.5px solid var(--felt-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.tc.up{background:var(--ivory);color:var(--ink);border-color:#d8cdb2}.tc.tap{cursor:pointer;border-color:var(--brass)}.tc.gone{visibility:hidden}
+.hand{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.hcard{width:40px;aspect-ratio:1/1.3;border-radius:8px;background:var(--ivory);color:var(--ink);border:2px solid #d8cdb2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;position:relative}
+.hcard.lohi{outline:2px solid var(--brass)}
+.reveal{display:flex;gap:6px;justify-content:center;margin:6px 0;min-height:44px;align-items:center}
+.rc{width:34px;aspect-ratio:1/1.3;border-radius:7px;background:var(--brass);color:#2a2007;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+.hint{text-align:center;font-size:12.5px;color:#a9c6b6;margin:6px 0;font-weight:600;min-height:16px}
+.actbar{display:flex;gap:8px;margin-top:6px}.act{flex:1;padding:13px;border-radius:12px;font-weight:800;font-size:15px;background:linear-gradient(180deg,var(--brass),var(--brass-deep));color:#2a2007}.act.sec{background:#0f3323;color:#e7d9b4;border:1.5px solid var(--felt-line)}
+.log{margin-top:8px;font-size:11.5px;color:#9fc0ad;line-height:1.6;max-height:80px;overflow:auto}
+.modal-bg{position:fixed;inset:0;background:#06170fcc;z-index:60;display:none;align-items:center;justify-content:center;padding:18px}.modal-bg.show{display:flex}
+.modal{background:var(--ivory);color:var(--ink);border-radius:18px;padding:18px;max-width:400px;width:100%;box-shadow:0 20px 60px #000a;max-height:86vh;overflow:auto}
+.modal h3{margin:0 0 8px}.modal p{font-size:13px;color:#5a6b60;line-height:1.5}.seat{display:block;width:100%;margin:6px 0;padding:13px;border-radius:11px;background:#1b5137;color:#fff;font-weight:800}
+.mbtn{display:block;width:100%;margin:6px 0;padding:12px;border-radius:11px;background:var(--felt);color:#fff;font-weight:800}.mbtn.red{background:#fff;color:var(--red);border:1px solid #e6c4bf}
+.modal-row{display:flex;gap:10px;margin-top:8px}.modal-row button{flex:1;padding:12px;border-radius:11px;font-weight:800}.modal-row .cancel{background:#e8e1d0;color:#5a6b60}.modal-row .ok{background:var(--felt);color:#fff}
+.warn{font-size:12px;color:#9a3d2f;background:#f7e9e4;padding:9px;border-radius:9px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:600;max-width:88%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
+.vtag{text-align:center;color:#6f8a7c;font-size:10px;margin-top:12px}
+</style></head>
+<body><div class="wrap">
+<header id="header"><a class="back" href="./index.html">← Ameya</a><div class="htitle">Le <span class="g">Trio</span></div>
+<div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Local</span></div><button class="menu-btn" id="menuBtn">☰</button></header>
+
+<section class="screen active" id="homeScreen"><div class="card"><h2>Le Trio <span style="font-size:12px;color:#9aa89e;font-weight:600">— façon Trio</span></h2>
+<p>Trouve des <b>trios</b> (trois cartes identiques) en révélant des cartes de la table ou la carte la plus <b>basse/haute</b> d'un joueur. Si ça ne correspond pas, on cache et on passe. Le <b>7-7-7</b> fait gagner d'un coup. 3 à 6 joueurs.</p>
+<button class="primary" id="createBtn">Créer une partie</button><button class="ghost" id="joinBtn">Rejoindre avec un code</button></div><div class="vtag" id="vtagHome"></div></section>
+
+<section class="screen" id="setupScreen"><div class="card"><h2>Les joueurs (3 à 6)</h2><div id="seatList"></div>
+<button class="add-btn" id="addSeat">+ Ajouter un joueur</button><button class="primary" id="startBtn" style="margin-top:14px" disabled>Commencer</button><button class="ghost" id="backHome">Retour</button></div></section>
+
+<section class="screen" id="gameScreen">
+<div class="turnbar" id="turnBar"></div><div class="pstrip" id="pstrip"></div>
+<div class="reveal" id="reveal"></div>
+<div class="section-t">Table (cartes cachées)</div><div class="grid" id="table"></div>
+<div class="section-t" id="handTitle">Ta main (triée)</div><div class="hand" id="hand"></div>
+<div class="hint" id="hint"></div><div class="actbar" id="actbar"></div><div class="log" id="log"></div><div class="vtag" id="vtag"></div>
+</section></div>
+<div class="toast" id="toast"></div><div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+<script>
+"use strict";const APP_VERSION="1.0.0";
+const store=(()=>{let mem={},ok=false;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}return{get(k){try{return ok?localStorage.getItem(k):(k in mem?mem[k]:null);}catch(e){return k in mem?mem[k]:null;}},set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+const FIREBASE_CONFIG={apiKey:"AIzaSyAnt2oiCjl8JLzUvBswUDHaBZ3GM53y9Ck",authDomain:"ameyatzee.firebaseapp.com",databaseURL:"https://ameyatzee-default-rtdb.europe-west1.firebasedatabase.app",projectId:"ameyatzee",storageBucket:"ameyatzee.firebasestorage.app",messagingSenderId:"690846387677",appId:"1:690846387677:web:0200403f1af5b707ffba34"};
+const SYNC_ENABLED=!!FIREBASE_CONFIG.databaseURL;const TOKENS=["#d64545","#3f7fbf","#3f9d6b","#e6c34a","#9a5cb4","#e0863a"];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const $=s=>document.querySelector(s);
+let state=null,remoteApplying=false;
+function targetTrios(n){return n<=4?3:2;}
+function handSize(n){return n===3?7:n===4?6:5;}
+function newGame(names){
+  const players=names.map((n,i)=>({id:Math.random().toString(36).slice(2,8),name:n,color:TOKENS[i%TOKENS.length]}));
+  let deck=[];for(let v=1;v<=12;v++)for(let k=0;k<3;k++)deck.push(v);shuffle(deck);
+  const hands={},trios={};const hs=handSize(players.length);
+  players.forEach(p=>{hands[p.id]=deck.splice(0,hs).sort((a,b)=>a-b);trios[p.id]=0;});
+  const table=deck.map(v=>({v,taken:false}));
+  return{room:null,updated:Date.now(),players,order:shuffle(players.map(p=>p.id)),turn:0,hands,table,trios,
+    reveal:[],phase:"play",winner:null,log:["🔺 Cherchez les trios !"]};
+}
+function normalize(s){if(!s||typeof s!=="object")return null;if(!Array.isArray(s.players)||s.players.length<2)return null;
+  s.order=s.order||s.players.map(p=>p.id);s.hands=s.hands||{};s.trios=s.trios||{};s.players.forEach(p=>{if(!Array.isArray(s.hands[p.id]))s.hands[p.id]=[];if(s.trios[p.id]==null)s.trios[p.id]=0;});
+  if(!Array.isArray(s.table))s.table=[];if(!Array.isArray(s.reveal))s.reveal=[];if(typeof s.turn!=="number")s.turn=0;
+  if(!["play","over"].includes(s.phase))s.phase="play";if(s.winner===undefined)s.winner=null;if(!Array.isArray(s.log))s.log=[];
+  if(typeof s.updated!=="number")s.updated=0;if(s.room===undefined)s.room=null;return s;}
+function save(){state.updated=Date.now();store.set("trio_state",JSON.stringify(state));if(!remoteApplying)pushRemote();}
+function load(){const raw=store.get("trio_state");if(raw){try{state=normalize(JSON.parse(raw));}catch(e){state=null;}}}
+function myId(){const id=store.get("trio_me");return (state&&id&&state.players.some(p=>p.id===id))?id:null;}
+function isMultiplayer(){return !!(state&&state.room);}
+function curPid(){return state.order[state.turn];}
+function isMyTurn(){if(state.phase==="over")return false;if(!isMultiplayer())return true;return myId()===curPid();}
+function pname(id){const p=state.players.find(x=>x.id===id);return p?p.name:"?";}
+function actorId(){return isMultiplayer()?myId():curPid();}
+
+/* révélations */
+function target(){return state.reveal.length?state.reveal[0].v:null;}
+function alreadyRevealed(src){return state.reveal.some(r=>r.k===src);}
+function revealTable(idx){if(!isMyTurn())return;const c=state.table[idx];if(!c||c.taken)return;const k="t"+idx;if(alreadyRevealed(k))return;doReveal({k,src:"table",idx,v:c.v});}
+function revealHand(pid,which){if(!isMyTurn())return;const h=state.hands[pid];if(!h||!h.length)return;const idx=which==="lo"?0:h.length-1;const k="h"+pid+which;if(alreadyRevealed(k))return;doReveal({k,src:"hand",pid,idx,v:h[idx]});}
+function doReveal(r){
+  const t=target();
+  state.reveal.push(r);
+  if(t!=null&&r.v!==t){ // raté
+    lg(`${pname(curPid())} révèle ${r.v} ≠ ${t} → raté`);
+    save();render();setTimeout(()=>{state.reveal=[];lg("Cartes recachées.");nextTurn();},1400);return;
+  }
+  if(state.reveal.length===3){ // trio !
+    const val=state.reveal[0].v;lg(`🔺 ${pname(curPid())} réussit un trio de ${val} !`);
+    // retirer les cartes
+    state.reveal.forEach(x=>{if(x.src==="table"){state.table[x.idx].taken=true;}else{const h=state.hands[x.pid];const p=h.indexOf(x.v);if(p>=0)h.splice(p,1);}});
+    state.trios[curPid()]=(state.trios[curPid()]||0)+1;
+    state.reveal=[];
+    if(val===7){win(curPid(),"le trio de 7 !");return;}
+    if(state.trios[curPid()]>=targetTrios(state.players.length)){win(curPid(),`${targetTrios(state.players.length)} trios`);return;}
+    lg(`${pname(curPid())} rejoue.`);save();render();return; // rejoue
+  }
+  save();render();
+}
+function stopTurn(){if(!isMyTurn())return;state.reveal=[];lg(`${pname(curPid())} s'arrête.`);nextTurn();}
+function nextTurn(){state.turn=(state.turn+1)%state.order.length;save();render();}
+function win(pid,why){state.winner=pid;state.phase="over";lg(`🏆 ${pname(pid)} gagne (${why}) !`);save();render();}
+function lg(s){state.log.unshift(s);if(state.log.length>14)state.log.length=14;}
+
+function render(){
+  if(!state)return;
+  const tb=$("#turnBar");
+  if(state.phase==="over"){tb.className="turnbar win";tb.innerHTML=`🏆 <b>${pname(state.winner)}</b> gagne !`;}
+  else{const mine=isMyTurn();tb.className="turnbar"+(mine?" mine":"");tb.innerHTML=mine?"🎯 <b>À toi de jouer</b>":`⏳ Au tour de <b>${pname(curPid())}</b>`;}
+  const canAsk=isMyTurn()&&state.phase==="play";
+  const ps=$("#pstrip");ps.innerHTML="";
+  state.order.forEach(id=>{const p=state.players.find(x=>x.id===id);const el=document.createElement("div");el.className="pl"+(id===curPid()&&state.phase!=="over"?" turn":"");
+    const dis=canAsk&&state.hands[id].length?"":"disabled";
+    el.innerHTML=`<div class="nm"><span class="tk" style="background:${p.color}"></span>${escapeHtml(p.name)}</div><div class="tr">🔺 ${state.trios[id]||0}</div>
+      <div class="ask"><button ${dis} data-lo="${id}">▼</button><button ${dis} data-hi="${id}">▲</button></div>`;
+    ps.appendChild(el);});
+  ps.querySelectorAll("[data-lo]").forEach(b=>b.addEventListener("click",()=>revealHand(b.dataset.lo,"lo")));
+  ps.querySelectorAll("[data-hi]").forEach(b=>b.addEventListener("click",()=>revealHand(b.dataset.hi,"hi")));
+  // reveal
+  const rv=$("#reveal");rv.innerHTML=state.reveal.length?state.reveal.map(r=>`<div class="rc">${r.v}</div>`).join(""):'<span style="color:#7fa08e;font-size:12px">Révèle des cartes pour former un trio…</span>';
+  // table
+  const tb2=$("#table");tb2.innerHTML="";
+  state.table.forEach((c,i)=>{const revd=state.reveal.find(r=>r.src==="table"&&r.idx===i);
+    const el=document.createElement("div");el.className="tc"+(c.taken?" gone":"")+(revd?" up":"")+(canAsk&&!c.taken&&!revd?" tap":"");
+    el.textContent=revd?c.v:(c.taken?"":"?");if(canAsk&&!c.taken&&!revd)el.addEventListener("click",()=>revealTable(i));tb2.appendChild(el);});
+  // hand
+  const me=actorId();const hand=me?state.hands[me]||[]:[];
+  $("#handTitle").textContent=isMultiplayer()&&!myId()?"Choisis qui tu es (menu ☰)":"Ta main (triée)";
+  const hd=$("#hand");hd.innerHTML="";
+  hand.forEach((v,i)=>{const el=document.createElement("div");el.className="hcard"+((i===0||i===hand.length-1)?" lohi":"");el.textContent=v;hd.appendChild(el);});
+  if(!hand.length&&!(isMultiplayer()&&!myId()))hd.innerHTML='<span style="color:#7fa08e;font-size:12px">Main vide</span>';
+  // actions
+  const hint=$("#hint");const ab=$("#actbar");ab.innerHTML="";
+  if(state.phase==="over"){hint.textContent="Partie terminée.";const b=document.createElement("button");b.className="act";b.textContent="🔄 Rejouer";b.addEventListener("click",()=>{const nm=state.players.map(p=>p.name);const room=state.room;const players=state.players;const ns=newGame(nm);ns.players=players;ns.order=shuffle(players.map(p=>p.id));ns.hands={};ns.trios={};let deck=[];for(let v=1;v<=12;v++)for(let k=0;k<3;k++)deck.push(v);shuffle(deck);const hs=handSize(players.length);players.forEach(p=>{ns.hands[p.id]=deck.splice(0,hs).sort((a,b)=>a-b);ns.trios[p.id]=0;});ns.table=deck.map(v=>({v,taken:false}));ns.room=room;state=ns;save();render();});ab.appendChild(b);}
+  else if(isMultiplayer()&&!myId())hint.textContent="Choisis qui tu es (menu ☰).";
+  else if(!isMyTurn())hint.textContent="En attente…";
+  else{hint.textContent=state.reveal.length?`Objectif : ${target()} — révèle une carte identique (ou arrête).`:"Révèle une carte de la table ou ▼/▲ d'un joueur.";
+    if(state.reveal.length){const b=document.createElement("button");b.className="act sec";b.textContent="Arrêter mon tour";b.addEventListener("click",stopTurn);ab.appendChild(b);}}
+  $("#log").innerHTML=state.log.map(l=>`<div>${escapeHtml(l)}</div>`).join("");$("#vtag").textContent="Le Trio · v"+APP_VERSION;
+}
+
+/* setup / écrans / firebase (commun) */
+let seats=["","",""];
+function renderSeats(){const l=$("#seatList");l.innerHTML="";seats.forEach((nm,i)=>{const row=document.createElement("div");row.className="prow";
+  row.innerHTML=`<div class="num" style="background:${TOKENS[i%6]}">${i+1}</div><input value="${escapeHtml(nm)}" placeholder="Joueur ${i+1}" maxlength="12">${seats.length>3?'<button class="rm">×</button>':''}`;
+  row.querySelector("input").addEventListener("input",e=>{seats[i]=e.target.value;chk();});const rm=row.querySelector(".rm");if(rm)rm.addEventListener("click",()=>{seats.splice(i,1);renderSeats();chk();});l.appendChild(row);});chk();}
+function chk(){$("#startBtn").disabled=seats.filter(s=>s.trim()).length<3;}
+function goHome(){$("#header").classList.remove("in-game");["setupScreen","gameScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#homeScreen").classList.add("active");$("#vtagHome").textContent="Ameya Games · Le Trio v"+APP_VERSION;}
+function goSetup(){seats=["","",""];renderSeats();$("#homeScreen").classList.remove("active");$("#setupScreen").classList.add("active");}
+function goGame(){["homeScreen","setupScreen"].forEach(s=>$("#"+s).classList.remove("active"));$("#gameScreen").classList.add("active");$("#header").classList.add("in-game");if(isMultiplayer()&&!myId())chooseSeat();render();}
+function openModal(h){$("#modalBox").innerHTML=h;$("#modalBg").classList.add("show");}function closeModal(){$("#modalBg").classList.remove("show");}
+$("#modalBg").addEventListener("click",e=>{if(e.target===$("#modalBg"))closeModal();});window.closeModal=closeModal;
+function chooseSeat(){const btns=state.players.map(p=>`<button class="seat" data-id="${p.id}" style="background:${p.color}">${escapeHtml(p.name)}</button>`).join("");
+  openModal(`<h3>Qui es-tu ?</h3><p>Choisis ton nom (ta main reste secrète).</p>${btns}<div class="modal-row"><button class="cancel" onclick="closeModal()">Plus tard</button></div>`);
+  $("#modalBox").querySelectorAll(".seat").forEach(b=>b.addEventListener("click",()=>{store.set("trio_me",b.dataset.id);closeModal();render();}));}
+function showMenu(){openModal(`<h3>Menu — Le Trio</h3>${isMultiplayer()?'<button class="mbtn" id="mSeat">👤 Qui suis-je</button><button class="mbtn" id="mCode">🔗 Code</button>':''}<button class="mbtn red" id="mLeave">🚪 Quitter</button><div class="modal-row"><button class="cancel" onclick="closeModal()">Fermer</button></div>`);
+  const s=$("#mSeat");if(s)s.addEventListener("click",()=>{closeModal();chooseSeat();});const c=$("#mCode");if(c)c.addEventListener("click",()=>{closeModal();openModal(`<h3>Code</h3><p style="font-size:24px;text-align:center;letter-spacing:.2em"><b>${state.room||"—"}</b></p><div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);});
+  $("#mLeave").addEventListener("click",()=>{closeModal();leaveRoom();state=null;store.set("trio_state","");goHome();});}
+function showJoin(){openModal(`<h3>Rejoindre</h3><input class="code-in" id="joinCode" maxlength="4" placeholder="ABCD" autocapitalize="characters"><div class="modal-row"><button class="cancel" onclick="closeModal()">Annuler</button><button class="ok" id="doJoin">Rejoindre</button></div><p id="joinErr" class="warn" style="display:none"></p>`);
+  $("#doJoin").addEventListener("click",()=>doJoin($("#joinCode").value.trim().toUpperCase()));}
+async function doJoin(code){if(code.length<3)return;if(!SYNC_ENABLED){toast("Synchro non configurée");return;}const btn=$("#doJoin"),err=$("#joinErr");if(err)err.style.display="none";if(btn){btn.disabled=true;btn.textContent="…";}
+  const prev=state;state={room:code,updated:0,players:[],order:[],turn:0,hands:{},table:[],trios:{},reveal:[],phase:"play",winner:null,log:[]};
+  const remote=await connectRoom({waitForFirst:true});if(!remote||!remote.players||remote.players.length<2){leaveRoom();state=prev;store.set("trio_state",state?JSON.stringify(state):"");if(err){err.textContent="Aucune partie trouvée.";err.style.display="block";}if(btn){btn.disabled=false;btn.textContent="Rejoindre";}return;}closeModal();goGame();}
+function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";return Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join("");}
+let db=null,roomRef=null,roomUnsub=null;
+function applyRemote(v){const ns=normalize(v);if(!ns)return false;remoteApplying=true;state=ns;remoteApplying=false;store.set("trio_state",JSON.stringify(state));if($("#gameScreen").classList.contains("active"))render();updateStatus();return true;}
+async function connectRoom(opts){opts=opts||{};updateStatus();if(!SYNC_ENABLED||!state.room||!navigator.onLine)return opts.waitForFirst?null:undefined;
+  try{if(!db){const app=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");const rt=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");const a=app.initializeApp(FIREBASE_CONFIG);db={rt,ref:rt.ref,onValue:rt.onValue,set:rt.set,inst:rt.getDatabase(a)};}
+    if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=db.ref(db.inst,"trio/"+state.room);let first=null;
+    if(opts.waitForFirst){first=new Promise(res=>{let done=false;const timer=setTimeout(()=>{if(!done){done=true;res(null);}},7000);roomUnsub=db.onValue(roomRef,snap=>{const ok=applyRemote(snap.val());if(!done){done=true;clearTimeout(timer);res(ok?state:null);}},()=>{if(!done){done=true;clearTimeout(timer);res(null);}});});}
+    else{roomUnsub=db.onValue(roomRef,snap=>applyRemote(snap.val()));}updateStatus("sync");setTimeout(updateStatus,800);if(first)return await first;}catch(e){if(opts.waitForFirst)return null;}}
+function pushRemote(){if(roomRef&&db&&navigator.onLine){updateStatus("sync");db.set(roomRef,state).then(()=>updateStatus()).catch(()=>updateStatus());}}
+function leaveRoom(){if(roomUnsub){try{roomUnsub();}catch(e){}roomUnsub=null;}roomRef=null;}
+function updateStatus(force){const dot=$("#statusDot"),txt=$("#statusText");dot.className="dot";if(force==="sync"){dot.classList.add("sync");txt.textContent="Sync…";return;}
+  if(state&&state.room){if(navigator.onLine){dot.classList.add("online");txt.textContent=state.room+" · en ligne";}else{dot.classList.add("offline");txt.textContent=state.room+" · hors-ligne";}}else{if(navigator.onLine)txt.textContent="Local";else{dot.classList.add("offline");txt.textContent="Hors-ligne";}}}
+window.addEventListener("online",()=>{updateStatus();if(state&&state.room)connectRoom();pushRemote();});window.addEventListener("offline",updateStatus);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&state&&state.room)connectRoom();});
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+let toastT=null;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2000);}
+$("#createBtn").addEventListener("click",goSetup);$("#joinBtn").addEventListener("click",showJoin);$("#backHome").addEventListener("click",goHome);
+$("#addSeat").addEventListener("click",()=>{if(seats.length>=6)return;seats.push("");renderSeats();});
+$("#startBtn").addEventListener("click",async()=>{const names=seats.map(s=>s.trim()).filter(Boolean);if(names.length<3)return;state=newGame(names);if(SYNC_ENABLED)state.room=randCode();save();goGame();if(state.room){await connectRoom();pushRemote();openModal(`<h3>Code</h3><p style="font-size:24px;text-align:center;letter-spacing:.2em"><b>${state.room}</b></p><p>Les autres rejoignent avec ce code.</p><div class="modal-row"><button class="ok" onclick="closeModal()">OK</button></div>`);}});
+$("#menuBtn").addEventListener("click",showMenu);
+load();updateStatus();if(state&&state.players&&state.players.length>=3&&state.table){goGame();if(state.room)connectRoom();}else goHome();
+</script></body></html>
