@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#123c2a"><title>Ameya Games — Ameya Empire</title>
+<style>
+:root{--felt:#1b5137;--felt-dark:#123c2a;--felt-line:#2a6b4a;--ivory:#f4efe4;--ivory-2:#eae3d2;--ink:#16241d;--brass:#cba14a;--brass-deep:#a67f2e;--red:#b53d2c;--green:#3f9d6b;--shadow:rgba(9,26,18,.45)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(120% 80% at 50% -10%,#2a6b4a,var(--felt) 42%,var(--felt-dark));background-attachment:fixed;color:var(--ivory);-webkit-font-smoothing:antialiased;padding:calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 14px)}
+.wrap{max-width:560px;margin:0 auto}button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+header{display:flex;align-items:center;gap:10px;margin-bottom:6px}.back{font-size:13px;font-weight:700;color:#bcd6c6;text-decoration:none}
+.htitle{flex:1;text-align:center;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:14px}.htitle .g{color:var(--brass)}
+.age{font-size:11px;font-weight:800;color:#2a2007;background:var(--brass);padding:4px 9px;border-radius:999px}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.rc{background:#0f3323;border:1px solid var(--felt-line);border-radius:10px;padding:6px 8px;text-align:center}
+.rc .v{font-size:15px;font-weight:800}.rc .l{font-size:9px;color:#9fc0ad;text-transform:uppercase;letter-spacing:.04em}
+.rc .rate{font-size:9px;font-weight:700}.rate.pos{color:#7fe0a8}.rate.neg{color:#e79b8f}
+.util{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.ut{border-radius:10px;padding:6px 10px;border:1px solid var(--felt-line);background:#0f3323;display:flex;align-items:center;justify-content:space-between}
+.ut.ok{border-color:#2f7a52}.ut.bad{border-color:var(--red);background:#3a1e1a}
+.ut .n{font-size:13px;font-weight:800}.ut .s{font-size:11px;color:#cfe3d6}
+.gridwrap{display:flex;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:min(96vw,420px)}
+.cell{aspect-ratio:1/1;border-radius:9px;background:#2f5a42;border:1px solid #23473440;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer;transition:transform .08s}
+.cell:active{transform:scale(.95)}.cell.empty{background:#265039;border:1px dashed #3a624a}
+.cell .lvl{position:absolute;bottom:1px;right:3px;font-size:9px;font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
+.cell.off{filter:grayscale(.7) brightness(.7)}.cell .warn{position:absolute;top:1px;left:2px;font-size:10px}
+.hint{text-align:center;font-size:12px;color:#a9c6b6;margin:8px 0;font-weight:600;min-height:16px}
+.modal-bg{position:fixed;inset:0;background:#06170fcc;z-index:60;display:none;align-items:flex-end;justify-content:center;padding:0}.modal-bg.show{display:flex}
+@media(min-width:520px){.modal-bg{align-items:center;padding:18px}}
+.modal{background:var(--ivory);color:var(--ink);border-radius:18px 18px 0 0;padding:18px;max-width:480px;width:100%;box-shadow:0 -10px 40px #000a;max-height:82vh;overflow:auto}
+@media(min-width:520px){.modal{border-radius:18px}}
+.modal h3{margin:0 0 4px;font-size:18px}.modal .sub{font-size:12px;color:#6c7a70;margin:0 0 12px}
+.blist{display:flex;flex-direction:column;gap:8px}
+.bitem{display:flex;gap:10px;align-items:center;border:1px solid #e0d8c4;border-radius:12px;padding:9px;background:#fff;text-align:left;width:100%}
+.bitem:disabled{opacity:.5}.bitem .em{font-size:26px}.bitem .info{flex:1}.bitem .nm{font-weight:800;font-size:14px}.bitem .de{font-size:11px;color:#6c7a70;line-height:1.3}
+.bitem .co{font-size:11px;font-weight:800;color:#a67f2e;margin-top:2px}
+.stat{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #eee5d3}
+.mrow{display:flex;gap:8px;margin-top:12px}.mrow button{flex:1;padding:12px;border-radius:11px;font-weight:800;font-size:14px}
+.up{background:var(--felt);color:#fff}.up:disabled{opacity:.5}.dem{background:#fff;color:var(--red);border:1px solid #e6c4bf}.cl{background:#e8e1d0;color:#5a6b60}
+.toolbar{display:flex;gap:8px;margin-top:10px}.tb{flex:1;padding:12px;border-radius:12px;background:#0f3323;border:1.5px solid var(--felt-line);color:#cfe3d6;font-weight:800;font-size:13px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;background:#0d2c20;color:var(--ivory);border:1px solid var(--felt-line);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:600;max-width:88%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
+.vtag{text-align:center;color:#6f8a7c;font-size:10px;margin-top:10px}
+</style></head>
+<body><div class="wrap">
+<header><a class="back" href="./index.html">← Ameya</a><div class="htitle">Ameya <span class="g">Empire</span></div><span class="age" id="ageTag">Âge 1</span></header>
+<div class="res" id="res"></div>
+<div class="util" id="util"></div>
+<div class="gridwrap"><div class="grid" id="grid"></div></div>
+<div class="hint" id="hint"></div>
+<div class="toolbar"><button class="tb" id="helpBtn">❔ Aide</button><button class="tb" id="resetBtn">🔄 Recommencer</button></div>
+<div class="vtag" id="vtag"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+<script>
+"use strict";
+const APP_VERSION="1.0.0";const GRIDN=36;
+const $=s=>document.querySelector(s);
+const store=(()=>{let mem={},ok=false;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}return{get(k){try{return ok?localStorage.getItem(k):mem[k];}catch(e){return mem[k];}},set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+
+const CFG={
+  mairie:{n:"Mairie",e:"🏛️",cost:{},age:1,capBonus:400,desc:"Cœur de ta cité. L'améliorer fait avancer d'âge et augmente le stockage.",unique:true},
+  centrale:{n:"Centrale",e:"⚡",cost:{gold:120,wood:40},age:1,powS:20,desc:"Fournit de l'électricité au réseau. Sans courant, rien ne tourne."},
+  chateau:{n:"Château d'eau",e:"💧",cost:{gold:100,wood:30},age:1,watS:20,powD:3,desc:"Fournit de l'eau — mais consomme de l'électricité pour pomper."},
+  maison:{n:"Maison",e:"🏠",cost:{gold:50,wood:30},age:1,popCap:5,powD:2,watD:2,desc:"Loge des habitants (ouvriers + impôts). Grandit si nourrie, en eau et en électricité."},
+  ferme:{n:"Ferme",e:"🚜",cost:{gold:40,wood:20},age:1,prod:{food:0.6},watD:3,work:1,desc:"Produit de la nourriture. Besoin d'eau et d'ouvriers."},
+  scierie:{n:"Scierie",e:"🌲",cost:{gold:60,wood:10},age:1,prod:{wood:0.5},powD:3,work:2,desc:"Produit du bois. Besoin d'électricité et d'ouvriers."},
+  entrepot:{n:"Entrepôt",e:"📦",cost:{gold:70,wood:80},age:1,capBonus:500,desc:"Augmente la capacité de stockage."},
+  mine:{n:"Mine d'or",e:"⛏️",cost:{gold:120,wood:80},age:2,prod:{gold:0.8},powD:4,watD:2,work:3,desc:"Extrait de l'or. Grosse consommation. (Âge 2)"},
+  caserne:{n:"Caserne",e:"🪖",cost:{gold:150,wood:100},age:2,powD:3,watD:2,work:2,barracks:true,desc:"Entraîne des soldats. (Âge 2)"},
+  marche:{n:"Marché",e:"🏪",cost:{gold:200,wood:120},age:2,taxMul:1.6,powD:3,watD:2,work:1,desc:"Impôts de la cité +60%. (Âge 2)"},
+  grandecentrale:{n:"Grande centrale",e:"🔌",cost:{gold:400,wood:200},age:3,powS:60,desc:"Beaucoup d'électricité. (Âge 3)"},
+  aqueduc:{n:"Aqueduc",e:"🌊",cost:{gold:350,wood:180},age:3,watS:55,powD:6,desc:"Beaucoup d'eau. (Âge 3)"}
+};
+const AGE_UP=[null,{gold:400,wood:300,pop:8},{gold:1400,wood:900,pop:22}];
+const scaleUp=(base,lvl)=>({gold:Math.round((base.gold||0)*Math.pow(1.8,lvl)),wood:Math.round((base.wood||0)*Math.pow(1.8,lvl))});
+
+let S=null;
+function fresh(){const grid=Array(GRIDN).fill(null);grid[14]={k:"mairie",lvl:1};
+  return{grid,gold:320,wood:200,food:100,pop:3,army:0,age:1,t:Date.now(),caps:{gold:600,wood:600,food:400},seenHelp:false};}
+function save(){S.t=Date.now();store.set("empire",JSON.stringify(S));}
+function load(){const r=store.get("empire");if(r){try{S=JSON.parse(r);}catch(e){S=null;}}if(!S)S=fresh();if(!Array.isArray(S.grid)||S.grid.length!==GRIDN)S=fresh();}
+
+function stats(){let powS=0,powD=0,watS=0,watD=0,work=0,popCap=0,taxMul=1;
+  S.grid.filter(Boolean).forEach(c=>{const cf=CFG[c.k],lv=c.lvl;
+    if(cf.powS)powS+=cf.powS*lv;if(cf.watS)watS+=cf.watS*lv;if(cf.powD)powD+=cf.powD*lv;if(cf.watD)watD+=cf.watD*lv;
+    if(cf.work)work+=cf.work*lv;if(cf.popCap)popCap+=cf.popCap*lv;if(cf.taxMul)taxMul*=cf.taxMul;});
+  const powEff=powD===0?1:Math.min(1,powS/powD),watEff=watD===0?1:Math.min(1,watS/watD),workEff=work===0?1:Math.min(1,S.pop/work);
+  return{powS,powD,watS,watD,work,popCap,taxMul,powEff,watEff,workEff};}
+function bEff(cf,st){let e=1;if(cf.powD)e=Math.min(e,st.powEff);if(cf.watD)e=Math.min(e,st.watEff);if(cf.work)e=Math.min(e,st.workEff);return e;}
+function rates(st){let g=0,w=0,f=0;
+  S.grid.filter(Boolean).forEach(c=>{const cf=CFG[c.k],lv=c.lvl;if(!cf.prod)return;const e=bEff(cf,st);
+    if(cf.prod.gold)g+=cf.prod.gold*lv*e;if(cf.prod.wood)w+=cf.prod.wood*lv*e;if(cf.prod.food)f+=cf.prod.food*lv*e;});
+  const taxes=S.pop*0.05*st.taxMul*Math.min(st.powEff,st.watEff);g+=taxes;f-=S.pop*0.03;
+  let dpop=0;const room=st.popCap-S.pop;
+  if(room>0&&S.food>0)dpop=0.06*room*Math.min(st.powEff,st.watEff);
+  if(S.food<=0&&f<0)dpop=-0.02*S.pop;
+  return{g,w,f,dpop,taxes};}
+function tick(dt){const st=stats(),r=rates(st);
+  S.gold=clamp(S.gold+r.g*dt,0,S.caps.gold);S.wood=clamp(S.wood+r.w*dt,0,S.caps.wood);S.food=clamp(S.food+r.f*dt,0,S.caps.food);
+  S.pop=Math.max(0,Math.min(st.popCap,S.pop+r.dpop*dt));}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function recalcCaps(){let g=600,w=600,f=400;S.grid.filter(Boolean).forEach(c=>{const cf=CFG[c.k];if(cf.capBonus){g+=cf.capBonus*c.lvl;w+=cf.capBonus*c.lvl;f+=Math.round(cf.capBonus*.6)*c.lvl;}});S.caps={gold:g,wood:w,food:f};}
+
+function canAfford(cost){return (S.gold>=(cost.gold||0))&&(S.wood>=(cost.wood||0));}
+function pay(cost){S.gold-=cost.gold||0;S.wood-=cost.wood||0;}
+function buildAt(idx,k){const cf=CFG[k];if(!canAfford(cf.cost)){toast("Pas assez de ressources");return;}
+  if(cf.unique&&S.grid.some(c=>c&&c.k===k)){toast("Déjà construit");return;}
+  pay(cf.cost);S.grid[idx]={k,lvl:1};recalcCaps();closeModal();save();render();toast(cf.n+" construit !");}
+function upgrade(idx){const c=S.grid[idx],cf=CFG[c.k];if(c.k==="mairie")return upgradeMairie(idx);
+  const cost=scaleUp(cf.cost,c.lvl);if(!canAfford(cost)){toast("Pas assez pour améliorer");return;}
+  pay(cost);c.lvl++;recalcCaps();detail(idx);save();render();}
+function upgradeMairie(idx){const c=S.grid[idx],nextAge=c.lvl+1,cost=AGE_UP[nextAge-1];
+  if(!cost){toast("Âge maximum");return;}if(!canAfford(cost)){toast(`Il faut ${cost.gold} or et ${cost.wood} bois`);return;}
+  if(S.pop<cost.pop){toast(`Il faut ${cost.pop} habitants`);return;}
+  pay(cost);c.lvl++;S.age=c.lvl;recalcCaps();closeModal();save();render();toast("🎉 Âge "+S.age+" débloqué !");}
+function demolish(idx){const c=S.grid[idx];if(c.k==="mairie"){toast("On ne détruit pas la Mairie");return;}
+  const cf=CFG[c.k];S.gold+=Math.round((cf.cost.gold||0)*0.4*c.lvl);S.grid[idx]=null;recalcCaps();closeModal();save();render();}
+function trainSoldier(){if(S.food<40||S.gold<40){toast("Il faut 40 or et 40 nourriture");return;}S.food-=40;S.gold-=40;S.army++;save();render();toast("🪖 +1 soldat");}
+
+function render(){const st=stats(),r=rates(st);
+  $("#ageTag").textContent="Âge "+S.age;
+  const fmt=n=>Math.floor(n).toLocaleString("fr-FR");
+  const rr=x=>{const s=(x>=0?"+":"")+x.toFixed(1);return `<span class="rate ${x>=0?"pos":"neg"}">${s}/s</span>`;};
+  $("#res").innerHTML=`
+    <div class="rc"><div class="v">🪙 ${fmt(S.gold)}</div><div class="l">Or / ${fmt(S.caps.gold)}</div><div>${rr(r.g)}</div></div>
+    <div class="rc"><div class="v">🪵 ${fmt(S.wood)}</div><div class="l">Bois / ${fmt(S.caps.wood)}</div><div>${rr(r.w)}</div></div>
+    <div class="rc"><div class="v">🌾 ${fmt(S.food)}</div><div class="l">Nourriture / ${fmt(S.caps.food)}</div><div>${rr(r.f)}</div></div>
+    <div class="rc"><div class="v">👥 ${fmt(S.pop)}</div><div class="l">Habitants / ${st.popCap}</div><div><span class="rate ${r.dpop>=0?"pos":"neg"}">${r.dpop>=0?"↗ croît":"↘ baisse"}</span></div></div>
+    <div class="rc"><div class="v">🛡️ ${S.army}</div><div class="l">Armée</div><div></div></div>
+    <div class="rc"><div class="v">👷 ${st.work}</div><div class="l">Ouvriers requis</div><div>${st.workEff<1?'<span class="rate neg">manque</span>':'<span class="rate pos">ok</span>'}</div></div>`;
+  const pOK=st.powS>=st.powD,wOK=st.watS>=st.watD;
+  $("#util").innerHTML=`
+    <div class="ut ${pOK?"ok":"bad"}"><span class="n">⚡ Électricité</span><span class="s">${Math.round(st.powS)} / ${Math.round(st.powD)} ${pOK?"✓":"⚠️ panne"}</span></div>
+    <div class="ut ${wOK?"ok":"bad"}"><span class="n">💧 Eau</span><span class="s">${Math.round(st.watS)} / ${Math.round(st.watD)} ${wOK?"✓":"⚠️ manque"}</span></div>`;
+  const g=$("#grid");g.innerHTML="";
+  S.grid.forEach((c,i)=>{const el=document.createElement("div");
+    if(!c){el.className="cell empty";}
+    else{const cf=CFG[c.k],off=(cf.powD&&!pOK)||(cf.watD&&!wOK);el.className="cell"+(off?" off":"");
+      el.innerHTML=`${cf.e}<span class="lvl">${c.lvl}</span>${off?'<span class="warn">⚠️</span>':""}`;}
+    el.addEventListener("click",()=>c?detail(i):buildMenu(i));g.appendChild(el);});
+  let hint="";
+  if(st.powD>st.powS)hint="⚠️ Panne d'électricité — construis/améliore une Centrale ⚡.";
+  else if(st.watD>st.watS)hint="⚠️ Manque d'eau — construis un Château d'eau 💧.";
+  else if(st.work>S.pop)hint="👷 Pas assez d'ouvriers — construis des Maisons 🏠.";
+  else if(r.f<0)hint="🌾 Nourriture en baisse — construis une Ferme 🚜.";
+  else hint="Tape une case vide pour construire, un bâtiment pour l'améliorer.";
+  $("#hint").textContent=hint;$("#vtag").textContent="Ameya Empire · v"+APP_VERSION;}
+
+function buildMenu(idx){
+  const items=Object.keys(CFG).filter(k=>k!=="mairie").map(k=>{const cf=CFG[k];
+    const locked=cf.age>S.age,uniq=cf.unique&&S.grid.some(c=>c&&c.k===k),aff=canAfford(cf.cost),dis=locked||uniq||!aff;
+    return `<button class="bitem" data-k="${k}" ${dis?"disabled":""}><div class="em">${cf.e}</div><div class="info"><div class="nm">${cf.n}${locked?" 🔒 Âge "+cf.age:""}</div><div class="de">${cf.desc}</div><div class="co">${cf.cost.gold?("🪙 "+cf.cost.gold):""} ${cf.cost.wood?("🪵 "+cf.cost.wood):""}</div></div></button>`;}).join("");
+  openModal(`<h3>Construire</h3><div class="sub">Case libre — choisis un bâtiment.</div><div class="blist">${items}</div><div class="mrow"><button class="cl" onclick="closeModal()">Fermer</button></div>`);
+  $("#modalBox").querySelectorAll(".bitem").forEach(b=>b.addEventListener("click",()=>buildAt(idx,b.dataset.k)));}
+function detail(idx){const c=S.grid[idx],cf=CFG[c.k],st=stats(),isMairie=c.k==="mairie";
+  const nextCost=isMairie?AGE_UP[c.lvl]:scaleUp(cf.cost,c.lvl);let rows="";
+  if(cf.prod){const e=bEff(cf,st);Object.keys(cf.prod).forEach(p=>{rows+=`<div class="stat"><span>Production ${p}</span><b>${(cf.prod[p]*c.lvl*e).toFixed(1)}/s</b></div>`;});}
+  if(cf.powS)rows+=`<div class="stat"><span>⚡ Fournit</span><b>+${cf.powS*c.lvl}</b></div>`;
+  if(cf.watS)rows+=`<div class="stat"><span>💧 Fournit</span><b>+${cf.watS*c.lvl}</b></div>`;
+  if(cf.powD)rows+=`<div class="stat"><span>⚡ Consomme</span><b>${cf.powD*c.lvl}</b></div>`;
+  if(cf.watD)rows+=`<div class="stat"><span>💧 Consomme</span><b>${cf.watD*c.lvl}</b></div>`;
+  if(cf.work)rows+=`<div class="stat"><span>👷 Ouvriers</span><b>${cf.work*c.lvl}</b></div>`;
+  if(cf.popCap)rows+=`<div class="stat"><span>👥 Logements</span><b>+${cf.popCap*c.lvl}</b></div>`;
+  if(cf.taxMul)rows+=`<div class="stat"><span>🪙 Impôts</span><b>×${cf.taxMul}</b></div>`;
+  let up="";
+  if(isMairie){up=nextCost?`<button class="up" id="upBtn">⬆️ Âge ${c.lvl+1} (🪙${nextCost.gold} 🪵${nextCost.wood} · 👥${nextCost.pop})</button>`:`<button class="up" disabled>Âge maximum</button>`;}
+  else up=`<button class="up" id="upBtn">⬆️ Améliorer niv ${c.lvl+1} (🪙${nextCost.gold} 🪵${nextCost.wood})</button>`;
+  const bar=cf.barracks?`<button class="up" id="trainBtn" style="background:#8a5a2e;margin-top:8px">🪖 Entraîner un soldat (🪙40 🌾40)</button>`:"";
+  openModal(`<h3>${cf.e} ${cf.n} <span style="font-size:13px;color:#8a978d">niv ${c.lvl}</span></h3><div class="sub">${cf.desc}</div>${rows}${up}${bar}
+    <div class="mrow">${isMairie?"":'<button class="dem" id="demBtn">Détruire</button>'}<button class="cl" onclick="closeModal()">Fermer</button></div>`);
+  const u=$("#upBtn");if(u)u.addEventListener("click",()=>upgrade(idx));
+  const d=$("#demBtn");if(d)d.addEventListener("click",()=>{if(confirm("Détruire ce bâtiment ?"))demolish(idx);});
+  const t=$("#trainBtn");if(t)t.addEventListener("click",trainSoldier);}
+function openModal(h){$("#modalBox").innerHTML=h;$("#modalBg").classList.add("show");}
+function closeModal(){$("#modalBg").classList.remove("show");}window.closeModal=closeModal;
+$("#modalBg").addEventListener("click",e=>{if(e.target===$("#modalBg"))closeModal();});
+let toastT=null;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),1900);}
+
+$("#helpBtn").addEventListener("click",()=>openModal(`<h3>Comment jouer</h3>
+  <p class="sub" style="line-height:1.7;font-size:13px">🎯 <b>But</b> : faire grandir ta cité (et bientôt ton armée).<br><br>
+  1️⃣ <b>Électricité d'abord</b> : construis une <b>⚡ Centrale</b>.<br>
+  2️⃣ <b>Eau ensuite</b> : le <b>💧 Château d'eau</b> a besoin de courant pour pomper.<br>
+  3️⃣ <b>🚜 Fermes</b> (nourriture) + <b>🏠 Maisons</b> (habitants). Les maisons ont besoin d'eau + électricité.<br>
+  4️⃣ Les habitants = <b>ouvriers</b> (scieries/mines) + <b>impôts</b> (or).<br>
+  5️⃣ Surveille ⚡/💧 en haut : si la demande dépasse la production, tout ralentit.<br>
+  6️⃣ Améliore la <b>🏛️ Mairie</b> pour changer d'âge et débloquer Mine, Marché, Caserne…<br><br>
+  La cité produit même quand le jeu est fermé.</p><div class="mrow"><button class="cl" onclick="closeModal()">Compris</button></div>`));
+$("#resetBtn").addEventListener("click",()=>{if(confirm("Tout recommencer à zéro ?")){S=fresh();recalcCaps();save();render();}});
+
+load();recalcCaps();
+(function offline(){const now=Date.now();let dt=(now-(S.t||now))/1000;if(dt>5){dt=Math.min(dt,8*3600);
+  const g0=S.gold,w0=S.wood,f0=S.food,p0=S.pop;let rem=dt;while(rem>0){const d=Math.min(60,rem);tick(d);rem-=d;}
+  const dg=Math.floor(S.gold-g0),dw=Math.floor(S.wood-w0),df=Math.floor(S.food-f0),dp=Math.floor(S.pop-p0);
+  if(dg>0||dw>0||dp>0)setTimeout(()=>openModal(`<h3>De retour !</h3><p class="sub">Pendant ton absence (${Math.round(dt/60)} min), ta cité a produit :</p>
+    <div class="stat"><span>🪙 Or</span><b>+${dg}</b></div><div class="stat"><span>🪵 Bois</span><b>+${Math.max(0,dw)}</b></div>
+    <div class="stat"><span>🌾 Nourriture</span><b>${df>=0?"+":""}${df}</b></div><div class="stat"><span>👥 Habitants</span><b>${dp>=0?"+":""}${dp}</b></div>
+    <div class="mrow"><button class="cl" onclick="closeModal()">Super</button></div>`),400);}})();
+render();
+if(!S.seenHelp){S.seenHelp=true;save();$("#helpBtn").click();}
+setInterval(()=>{tick(1);render();},1000);
+setInterval(save,5000);
+window.addEventListener("beforeunload",save);
+</script></body></html>
