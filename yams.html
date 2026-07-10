@@ -190,6 +190,8 @@ td.cell input::placeholder{color:#cbbfa6;font-weight:600}
 }
 .chip.sel{background:var(--brass);color:#2a2007;border-color:var(--brass)}
 .dice-tray{display:flex;justify-content:center;gap:12px;perspective:600px;padding:6px 0 12px;flex-wrap:wrap}
+@keyframes trayShake{0%,100%{transform:translate(0,0)}15%{transform:translate(-4px,2px) rotate(-.6deg)}35%{transform:translate(4px,-2px) rotate(.6deg)}55%{transform:translate(-3px,1px)}75%{transform:translate(2px,-1px)}}
+.dice-tray.shake,.spec-dice.shake{animation:trayShake .5s ease}
 .die{
   width:56px;height:56px;perspective:500px;position:relative;
   transition:transform .15s;
@@ -490,7 +492,7 @@ const CATS=[
   {k:"quatre",l:"Quatre",sec:"up", face:4},
   {k:"cinq", l:"Cinq",   sec:"up", face:5},
   {k:"six",  l:"Six",    sec:"up", face:6},
-  {k:"brelan",l:"Brelan",      sec:"low", trio:1},
+  {k:"brelan",l:"Brelan",      sec:"low"},
   {k:"carre", l:"Carré",       sec:"low"},
   {k:"full",  l:"Full",        sec:"low", fixed:25},
   {k:"petiteSuite",l:"Petite suite",sec:"low", fixed:30},
@@ -617,7 +619,7 @@ function refreshStart(){
 /* ============================================================
    Version, toast, identité appareil & tour de jeu (en ligne)
    ============================================================ */
-const APP_VERSION="1.6.0";
+const APP_VERSION="1.6.1";
 let toastT=null;
 function toast(msg){const el=$("#toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
 
@@ -824,7 +826,7 @@ function openScorePopup(selP,selK){
     renderSheet();
     const c=CATS.find(x=>x.k===selK);
     const pName=(state.players.find(p=>p.id===selP)||{}).name||"—";
-    toast(`✓ ${pName} · ${c.l} = ${v}`);
+    toast(`✓ ${pName} · ${c.l} = ${v}`);buzz(25);
     if(state.physical===false)renderSuggest();
     closeModal();
     if(isMultiplayer())updateTurnUI();
@@ -890,6 +892,7 @@ function buildDie(i){
     if(!isMyTurn())return;
     if(state.rollsLeft===3)return; // rien à garder avant le 1er lancer
     state.dice[i].held=!state.dice[i].held;
+    buzz(15);
     die.classList.toggle("held",state.dice[i].held);
     save();
   });
@@ -905,6 +908,8 @@ function renderDice(animate){
     tray.innerHTML="";
     for(let i=0;i<5;i++)tray.appendChild(buildDie(i));
   }
+  if(animate){tray.classList.remove("shake");void tray.offsetWidth;tray.classList.add("shake");
+    setTimeout(()=>tray.classList.remove("shake"),550);}
   state.dice.forEach((d,i)=>{
     const die=tray.children[i];
     die.classList.toggle("held",!!d.held);
@@ -920,6 +925,7 @@ function renderDice(animate){
 function rollDice(){
   if(state.rollsLeft<=0)return;
   if(!isMyTurn()){toast("Ce n'est pas ton tour");return;}
+  buzz([35,30,35,30,70]); // vibration pendant que les dés roulent (Android)
   state.dice.forEach((d,i)=>{
     if(d.held)return;
     d.v=1+Math.floor(Math.random()*6);
@@ -930,6 +936,9 @@ function rollDice(){
   save();               // pousse aux autres appareils, qui rejouent l'animation
   setTimeout(renderSuggest,300);
 }
+// Vibration : marche sur Android (Chrome…). iOS/Safari ne supporte pas
+// l'API — d'où la secousse visuelle du plateau en plus, pour tout le monde.
+function buzz(pattern){try{if(navigator.vibrate)navigator.vibrate(pattern);}catch(e){}}
 function resetTurn(){
   state.dice.forEach(d=>d.held=false);
   state.rollsLeft=3;
@@ -1026,6 +1035,8 @@ const SPEC_PLACE={1:`rotateY(0deg) translateZ(28px)`,2:`rotateX(90deg) translate
   5:`rotateX(-90deg) translateZ(28px)`,6:`rotateY(180deg) translateZ(28px)`};
 function renderSpecDice(animate){
   const box=$("#specDice");
+  if(animate){buzz([25,25,25,25,45]);box.classList.remove("shake");void box.offsetWidth;box.classList.add("shake");
+    setTimeout(()=>box.classList.remove("shake"),550);}
   if(box.children.length!==5){
     box.innerHTML="";
     for(let i=0;i<5;i++){
@@ -1466,6 +1477,50 @@ $("#specMinBtn").addEventListener("click",()=>{
    Pour un vrai mode hors-ligne, il faudrait un hébergement
    statique type GitHub Pages + un sw.js.)
    ============================================================ */
+
+/* ============================================================
+   Mise à jour automatique
+   La partie vit dans le stockage local : recharger la page ne
+   perd JAMAIS la partie en cours. On peut donc vérifier en
+   arrière-plan si une nouvelle version du site est en ligne
+   (on re-télécharge la page sans cache et on compare la
+   version), et proposer un rechargement en un tap.
+   ============================================================ */
+let updateFound=false;
+async function checkForUpdate(){
+  if(updateFound||!navigator.onLine)return;
+  try{
+    const res=await fetch(location.href.split("#")[0],{cache:"no-store",redirect:"follow"});
+    if(!res.ok)return;
+    const txt=await res.text();
+    const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if(m&&m[1]!==APP_VERSION){
+      updateFound=true;
+      const bar=$("#updateBar");
+      if(bar){bar.style.display="flex";
+        const b=$("#updateBtn");
+        if(b)b.textContent="Mettre à jour → v"+m[1];}
+    }
+  }catch(e){/* hors-ligne ou hébergeur qui bloque : on réessaiera */}
+}
+const _ub=$("#updateBtn");
+if(_ub)_ub.addEventListener("click",()=>{
+  // l'état est déjà sauvegardé à chaque action ; on force juste par sécurité
+  try{store.set("yams_state",JSON.stringify(state));}catch(e){}
+  location.reload();
+});
+// vérifie : au lancement, puis toutes les 5 min, et à chaque retour sur l'appli
+setTimeout(checkForUpdate,4000);
+setInterval(checkForUpdate,5*60*1000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible")checkForUpdate();
+});
+// petit mot après une mise à jour réussie : la partie a bien survécu
+(function(){
+  const seen=store.get("yams_seen_version");
+  if(seen&&seen!==APP_VERSION)setTimeout(()=>toast("✓ Mise à jour v"+APP_VERSION+" installée — ta partie continue !"),900);
+  store.set("yams_seen_version",APP_VERSION);
+})();
 
 /* ============================================================
    Init
